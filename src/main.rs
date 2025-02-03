@@ -1,6 +1,13 @@
+use clap::Parser;
 use std::fs::*;
 use std::io::*;
 
+#[derive(Parser)]
+#[command(author = "futa-t")]
+struct Args {
+    #[arg(short = 's', long = "silent")]
+    silent: bool,
+}
 fn increment_build_number() -> usize {
     let f_build = "buildversion";
 
@@ -32,5 +39,8 @@ fn increment_build_number() -> usize {
 }
 
 fn main() {
-    println!("{}", increment_build_number());
+    let args = Args::parse();
+    if !args.silent {
+        println!("{}", increment_build_number());
+    }
 }

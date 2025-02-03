@@ -5,8 +5,11 @@ use std::io::*;
 #[derive(Parser)]
 #[command(author = "futa-t")]
 struct Args {
-    #[arg(short = 's', long = "silent")]
+    #[arg(short, long)]
     silent: bool,
+
+    #[arg(long)]
+    noincrement: bool,
 }
 fn increment_build_number() -> usize {
     let f_build = "buildversion";
@@ -38,9 +41,36 @@ fn increment_build_number() -> usize {
     return version;
 }
 
+fn get_current_build() -> usize {
+    let f_build = "buildversion";
+
+    let mut version = String::new();
+
+    match File::open(f_build) {
+        Ok(mut f) => {
+            let r = f.read_to_string(&mut version);
+            if let Err(_) = r {
+                return 0;
+            }
+        }
+        Err(_) => {
+            return 0;
+        }
+    }
+
+    version.parse::<usize>().unwrap_or(0usize)
+}
+
 fn main() {
     let args = Args::parse();
+
+    if args.noincrement {
+        println!("{}", get_current_build());
+        return;
+    }
+
+    let build_number = increment_build_number();
     if !args.silent {
-        println!("{}", increment_build_number());
+        println!("{}", build_number);
     }
 }

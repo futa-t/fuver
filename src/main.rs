@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
 use std::fs::{self, File};
 use std::io;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use fuver::*;
 
@@ -37,35 +37,21 @@ enum IncrementType {
 #[derive(Parser)]
 #[command(author = "futa-t")]
 struct Args {
-    #[arg(short, long, default_value = "fuver.toml")]
-    config: PathBuf,
-
     #[command(subcommand)]
     command: SubCommands,
 }
 
-fn init() -> io::Result<()> {
-    let f = PathBuf::from("fuver.toml");
+fn init(f: &Path) -> io::Result<()> {
     if f.exists() {
-        println!("すでに初期化済みです");
+        println!("すでに初期化済みです")
     } else {
-        File::create(f)?;
+        File::create(&f)?;
     }
     Ok(())
 }
 
-fn main() {
-    let args = Args::parse();
-
-    if !args.config.exists() {
-        File::create(&args.config).unwrap();
-    }
-    let cs = fs::read_to_string(&args.config).unwrap();
-    let mut c: FuVer = toml::from_str(&cs).unwrap();
-    // println!("current version: {}", c);
-
-    match args.command {
-        SubCommands::Init => init().unwrap(),
+fn run_cmd(cmd: SubCommands, c: &mut FuVer) {
+    match cmd {
         SubCommands::Show { what } => match what {
             Some(ShowType::Version) => println!("{}", c.version),
             Some(ShowType::Build) => println!("{}", c.build),
@@ -92,7 +78,27 @@ fn main() {
                 println!("{}", c);
             }
         }
+        SubCommands::Init => {}
     }
+}
 
-    c.save(&args.config);
+fn main() {
+    let args = Args::parse();
+    let conf = PathBuf::from("fuver.toml");
+
+    match args.command {
+        SubCommands::Init => {
+            init(&conf).unwrap();
+        }
+        cmd => {
+            if !conf.exists() {
+                eprintln!("fuver.tomlがみつかりませんでした。fuver init を実行してください");
+                std::process::exit(1);
+            }
+            let cs = fs::read_to_string(&conf).unwrap();
+            let mut c: FuVer = toml::from_str(&cs).unwrap();
+            run_cmd(cmd, &mut c);
+            c.save(&conf);
+        }
+    }
 }

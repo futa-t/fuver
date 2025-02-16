@@ -13,3 +13,7 @@ git add fuver.toml
 
 todo
 - Cargo.tomlとかpyproject.tomlとかのバージョンも触れる設定つくる
+- れどめ整備
+- `x.x.1`みたいな形式だけじゃなくてmajor, minor, patchとかでインクリメントできるようにする
+- プレリリースの追加できるようにする
+- 上位が更新されたときの下位リセット

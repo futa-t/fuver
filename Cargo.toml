@@ -1,8 +1,14 @@
 [package]
-build = "build.rs"
-edition = "2021"
 name = "fuver"
-version = "0.3.4"
+version = "0.4.0"
+authors = ["futa-t"]
+edition = "2021"
+description = "バージョン管理用のCLIツールです"
+repository = "https://github.com/futa-t/fuver"
+readme = "README.md"
+license = "MIT"
+categories = ["command-line-utilities"]
+exclude = ["fuver.toml"]
 
 [dependencies]
 clap = {version = "4.5.27", features = ["derive"]}

@@ -1,4 +1,7 @@
 # fuver
+
+[![GitHub license](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/futa-t/fuver/blob/main/LICENSE)
+
 ## プロジェクトバージョン管理ツール
 自動でバージョンとかビルド番号をインクリメントしたりするやつ
 

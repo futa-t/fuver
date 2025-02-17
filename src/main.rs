@@ -53,8 +53,8 @@ fn init(f: &Path) -> io::Result<()> {
 fn run_cmd(cmd: SubCommands, c: &mut FuVer) {
     match cmd {
         SubCommands::Show { what } => match what {
-            Some(ShowType::Version) => println!("{}", c.version),
-            Some(ShowType::Build) => println!("{}", c.build),
+            Some(ShowType::Version) => c.show_version(),
+            Some(ShowType::Build) => c.show_build(),
             None => println!("{}", c),
         },
         SubCommands::Increment {

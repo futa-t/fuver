@@ -3,59 +3,70 @@ use std::fmt;
 use std::fs;
 use std::path::Path;
 
+mod version;
+use version::*;
 #[derive(Serialize, Deserialize)]
 pub struct FuVer {
-    #[serde(default = "default_version")]
-    pub version: String,
     #[serde(default)]
-    pub build: usize,
-}
+    pub version: Version,
 
-fn default_version() -> String {
-    String::from("0.1.0")
+    #[serde(default)]
+    pub pre: Option<String>,
+
+    #[serde(default)]
+    pub build: Option<usize>,
 }
 
 impl fmt::Display for FuVer {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}+build{}", self.version, self.build)
+        write!(f, "{}", self.version)?;
+        if let Some(p) = &self.pre {
+            write!(f, "-{}", p)?;
+        }
+        if let Some(b) = &self.build {
+            write!(f, "+build.{}", b)?;
+        };
+        write!(f, "")
     }
 }
 
 impl FuVer {
-    fn part_version(&self, version: &str) -> Result<Vec<usize>, String> {
-        version
-            .split(".")
-            .map(|n| {
-                n.parse::<usize>()
-                    .map_err(|e| format!("バージョン文字列が不正です({}): {}", version, e))
-            })
-            .collect()
-    }
-
     fn part_mask(&self, mask: &str) -> Result<Vec<usize>, String> {
         let part = mask.split(".").map(|n| n.parse::<usize>().unwrap_or(0));
         Ok(part.collect())
     }
 
     pub fn increment_version(&mut self, mask: &str) -> Result<(), String> {
-        let v_part = self.part_version(&self.version)?;
-
         let m_part: Vec<usize> = self.part_mask(mask)?;
+        let m_version = Version::new(m_part[0], m_part[1], m_part[2]);
 
-        let mut new_version: Vec<String> = vec![];
-        for (v, m) in v_part.iter().zip(m_part.iter()) {
-            new_version.push((v + m).to_string());
-        }
-
-        let new_version_string = new_version.join(".");
-        self.version = new_version_string.clone();
+        self.version += m_version;
 
         Ok(())
     }
 
     pub fn increment_build(&mut self) -> Result<(), String> {
-        self.build += 1;
+        let current_build = match self.build {
+            Some(b) => b,
+            None => {
+                println!("ビルド情報がみつかりませんでした。作成します。");
+                0
+            }
+        };
+        self.build = Some(current_build + 1);
         Ok(())
+    }
+
+    pub fn show_version(&self) {
+        println!("{}", self.version);
+    }
+
+    pub fn show_build(&self) {
+        if let Some(b) = &self.build {
+            println!("+build.{}", b);
+        } else {
+            println!("no buildmetadata.");
+        }
     }
 
     pub fn save(&self, p: &Path) {

@@ -1,0 +1,14 @@
+NOTICES
+
+This project uses the following third-party libraries:
+
+---
+
+clap-rs/clap - MIT
+https://github.com/clap-rs/clap
+
+serde-rs/serde - MIT
+https://github.com/serde-rs/serde
+
+toml-rs/toml - MIT
+https://github.com/toml-rs/toml

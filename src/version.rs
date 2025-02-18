@@ -38,7 +38,7 @@ impl<'de> Deserialize<'de> for Version {
 impl FromStr for Version {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parts = part_version(&s)?;
+        let parts = part_version(s)?;
         Ok(Self {
             major: parts[0],
             minor: parts[1],

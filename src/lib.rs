@@ -5,6 +5,9 @@ use std::path::Path;
 
 mod version;
 use version::*;
+mod build;
+pub use build::*;
+
 #[derive(Serialize, Deserialize)]
 pub struct FuVer {
     #[serde(default)]
@@ -13,8 +16,8 @@ pub struct FuVer {
     #[serde(default)]
     pub pre: Option<String>,
 
-    #[serde(default)]
-    pub build: Option<usize>,
+    #[serde()]
+    pub build: Option<BuildIdentifiers>,
 }
 
 impl fmt::Display for FuVer {
@@ -24,7 +27,7 @@ impl fmt::Display for FuVer {
             write!(f, "-{}", p)?;
         }
         if let Some(b) = &self.build {
-            write!(f, "+build.{}", b)?;
+            write!(f, "{}", b)?;
         };
         write!(f, "")
     }
@@ -46,14 +49,9 @@ impl FuVer {
     }
 
     pub fn increment_build(&mut self) -> Result<(), String> {
-        let current_build = match self.build {
-            Some(b) => b,
-            None => {
-                println!("ビルド情報がみつかりませんでした。作成します。");
-                0
-            }
-        };
-        self.build = Some(current_build + 1);
+        if let Some(build) = &self.build {
+            self.build = Some(build.increment()?);
+        }
         Ok(())
     }
 
@@ -63,7 +61,7 @@ impl FuVer {
 
     pub fn show_build(&self) {
         if let Some(b) = &self.build {
-            println!("+build.{}", b);
+            println!("{}", b);
         } else {
             println!("no buildmetadata.");
         }

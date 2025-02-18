@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
 use std::fs::{self, File};
-use std::io;
 use std::path::{Path, PathBuf};
+use std::{io, str};
 
 use fuver::*;
 
@@ -45,7 +45,7 @@ fn init(f: &Path) -> io::Result<()> {
     if f.exists() {
         println!("すでに初期化済みです")
     } else {
-        File::create(&f)?;
+        File::create(f)?;
     }
     Ok(())
 }

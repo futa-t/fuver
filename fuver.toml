@@ -1,2 +1,6 @@
 version = "0.4.5"
-build = 509
+
+[build]
+number = 509
+date = "20250220"
+hash = "5c0b4241921497282e88037b348a701b4a748356"

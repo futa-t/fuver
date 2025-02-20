@@ -1,6 +1,6 @@
 use std::fmt;
 
-use chrono::Local;
+use chrono::{DateTime, Local};
 use git2::Repository;
 use serde::{Deserialize, Serialize};
 
@@ -63,11 +63,21 @@ impl BuildMetaData {
     // ただし、ウンウンと頭を捻りながら数時間悩むのならば話は別である。こねくりまわして作成したコードは大体のちに悩みの種になるので。
     //
     // 現在依存している`clap`や`serde`、`toml`に関しても最終的には依存を外して自前実装にするつもり。
-    fn fmt_replace(&self, opt: &str) -> String {
+    fn fmt_replace(&self, opt: &str) -> Result<String, BuildMetaError> {
         let o: Vec<&str> = opt.split(":").collect();
-        match o[0] {
+
+        let ret = match o[0] {
             "number" | "num" | "n" => self.number.to_string(),
-            "date" | "d" => self.date.clone(),
+            "date" | "d" => match DateTime::parse_from_rfc3339(&self.date) {
+                Ok(dt) => {
+                    let f = match o.get(1..) {
+                        Some(s) => &s.join(":"),
+                        None => "%Y%m%d",
+                    };
+                    dt.format(f).to_string()
+                }
+                Err(_) => self.date.clone().to_string(),
+            },
             "hash" | "h" => {
                 let n = match o.get(1) {
                     Some(s) => s.parse::<usize>().unwrap_or(8),
@@ -75,8 +85,11 @@ impl BuildMetaData {
                 };
                 self.hash_haed(n)
             }
-            _ => String::new(),
-        }
+            _ => {
+                return Err(BuildMetaError::from(opt.to_string()));
+            }
+        };
+        Ok(ret)
     }
 
     /// Print BuildMetaData with format-string
@@ -85,7 +98,7 @@ impl BuildMetaData {
     /// | format               | input                            | export                         | note                                                  |
     /// | -------------------- | -------------------------------- | ------------------------------ | ----------------------------------------------------- |
     /// | number,<br>num,<br>n | `build.{number}`<br>`build{num}` | `build.123`<br>`build123`      |                                                       |
-    /// | date,<br>d           | `date.{date}`<br>`{d}`           | `date.20250220`<br>`20250220`  | future: strftime support                              |
+    /// | date,<br>d           | `date.{date}`<br>`{d:%Y/%m/%d %H:%M}`           | `date.20250220`<br>`20250220`  | future: strftime support                              |
     /// | hash,<br>h           | `hash.{hash}`<br>`{hash:4}`      | `hash.fef16c61`<br>`hash.fef1` | After `:`, specify display digits (default: 8 digits) |
     pub fn show_fmt(&self, fmt: &str) {
         let mut result = String::from("+");
@@ -97,14 +110,20 @@ impl BuildMetaData {
                 }
             } else if ch == '{' {
                 let mut opt = String::new();
+                let mut tmp = String::new();
+                tmp.push(ch);
                 while let Some(o) = chars.next() {
+                    tmp.push(o);
                     if o == '}' {
                         break;
                     };
                     opt.push(o);
                 }
-                let s = self.fmt_replace(&opt);
-                result.push_str(&s);
+                let push_str = match self.fmt_replace(&opt) {
+                    Ok(s) => s,
+                    Err(_) => tmp,
+                };
+                result.push_str(&push_str);
             } else {
                 result.push(ch);
             }
@@ -126,13 +145,7 @@ impl BuildMetaData {
 
     /// Update BuildDate to today
     pub fn update_date(&mut self) -> Result<(), BuildMetaError> {
-        self.date = Local::now().format("%Y%m%d").to_string();
-        Ok(())
-    }
-
-    /// Update BuildDate from strftime-format
-    pub fn update_datetime(&mut self, fmt: &str) -> Result<(), BuildMetaError> {
-        self.date = Local::now().format(fmt).to_string();
+        self.date = Local::now().to_rfc3339();
         Ok(())
     }
 

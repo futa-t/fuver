@@ -9,8 +9,8 @@ use fuver::*;
 enum SubCommands {
     Init,
     Show {
-        #[arg(value_enum)]
-        what: Option<ShowType>,
+        #[command(subcommand)]
+        command: Option<ShowCommands>,
     },
     Increment {
         #[arg(value_enum)]
@@ -20,12 +20,6 @@ enum SubCommands {
         #[arg(short, long)]
         silent: bool,
     },
-}
-
-#[derive(clap::ValueEnum, Clone)]
-enum ShowType {
-    Version,
-    Build,
 }
 
 #[derive(clap::ValueEnum, Clone)]
@@ -52,9 +46,8 @@ fn init(f: &Path) -> io::Result<()> {
 
 fn run_cmd(cmd: SubCommands, c: &mut FuVer) {
     match cmd {
-        SubCommands::Show { what } => match what {
-            Some(ShowType::Version) => c.show_version(),
-            Some(ShowType::Build) => c.show_build(),
+        SubCommands::Show { command } => match command {
+            Some(cmd) => run_show_cmd(cmd, c),
             None => println!("{}", c),
         },
         SubCommands::Increment {

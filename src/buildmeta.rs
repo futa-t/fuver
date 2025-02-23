@@ -4,7 +4,6 @@ use chrono::{DateTime, Local};
 use git2::Repository;
 use serde::{Deserialize, Serialize};
 
-///
 #[derive(Serialize, Deserialize)]
 #[serde(default)]
 pub struct BuildMetaData {

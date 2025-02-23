@@ -7,6 +7,8 @@ mod version;
 use version::*;
 mod buildmeta;
 pub use buildmeta::*;
+mod show;
+pub use show::*;
 
 #[derive(Serialize, Deserialize)]
 pub struct FuVer {

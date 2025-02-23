@@ -13,12 +13,14 @@ enum SubCommands {
         command: Option<ShowCommands>,
     },
     Increment {
-        #[arg(value_enum)]
-        what: IncrementType,
-        #[arg(default_value = "x.x.x")]
-        value: String,
-        #[arg(short, long)]
-        silent: bool,
+        #[command(subcommand)]
+        command: Option<IncrementCommands>,
+        // #[arg(value_enum)]
+        // what: IncrementType,
+        // #[arg(default_value = "x.x.x")]
+        // value: String,
+        // #[arg(short, long)]
+        // silent: bool,
     },
 }
 
@@ -50,26 +52,25 @@ fn run_cmd(cmd: SubCommands, c: &mut FuVer) {
             Some(cmd) => run_show_cmd(cmd, c),
             None => println!("{}", c),
         },
-        SubCommands::Increment {
-            what,
-            value,
-            silent,
-        } => {
-            match what {
-                IncrementType::Version => {
-                    if let Err(e) = c.increment_version(&value) {
-                        eprintln!("{}", e);
-                    }
-                }
-                IncrementType::Build => {
-                    if let Err(e) = c.increment_build() {
-                        eprintln!("{}", e)
-                    }
-                }
+        SubCommands::Increment { command } => {
+            match command {
+                Some(cmd) => run_increment(cmd, c).unwrap(),
+                None => println!("{}", c),
             }
-            if !silent {
-                println!("{}", c);
-            }
+            //     In::Version => {
+            //         if let Err(e) = c.increment_version(&value) {
+            //             eprintln!("{}", e);
+            //         }
+            //     }
+            //     IncrementType::Build => {
+            //         if let Err(e) = c.increment_build() {
+            //             eprintln!("{}", e)
+            //         }
+            //     }
+            // }
+            // if !silent {
+            //     println!("{}", c);
+            // }
         }
         SubCommands::Init => {}
     }

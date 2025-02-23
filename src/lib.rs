@@ -9,6 +9,8 @@ mod buildmeta;
 pub use buildmeta::*;
 mod show;
 pub use show::*;
+mod increment;
+pub use increment::*;
 
 #[derive(Serialize, Deserialize)]
 pub struct FuVer {

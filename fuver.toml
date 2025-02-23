@@ -1,7 +1,7 @@
-version = "0.4.5"
+version = "0.4.6"
 
 [build]
-number = 537
-date = "2025-02-23T14:58:02.394260400+09:00"
-hash = "71428ec914925c9f39d4a4d98d3df1bcb321d787"
+number = 589
+date = "2025-02-23T21:55:05.204050200+09:00"
+hash = "8b3ba23beb56e7673d2dabf22029851fcfc2c52a"
 format = "build.{number}.{date:%Y%m%d}"

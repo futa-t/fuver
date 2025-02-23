@@ -46,8 +46,7 @@ impl FuVer {
     }
 
     pub fn increment_build(&mut self) -> Result<(), String> {
-        self.build.increment_number();
-        Ok(())
+        self.build.increment_number().map_err(|e| e.to_string())
     }
 
     pub fn show_version(&self) {

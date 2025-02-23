@@ -11,6 +11,7 @@ pub struct BuildMetaData {
     pub number: usize,
     pub date: String,
     pub hash: String,
+    format: String,
 }
 
 #[derive(Debug)]
@@ -31,14 +32,28 @@ impl fmt::Display for BuildMetaError {
 }
 
 impl BuildMetaData {
-    pub fn new(number: usize, date: String, hash: String) -> BuildMetaData {
-        BuildMetaData { number, date, hash }
+    pub fn new(number: usize, date: String, hash: String, format: String) -> BuildMetaData {
+        BuildMetaData {
+            number,
+            date,
+            hash,
+            format,
+        }
     }
 
     /// Print Full BuildMetaData
     /// example: `+build.123.20250220.fef16c61`
-    pub fn show(&self) {
+    pub fn show_all(&self) {
         println!("{}", &self);
+    }
+
+    /// Print from Config Format
+    pub fn show(&self) {
+        println!("{}", self.create_string());
+    }
+
+    fn create_string(&self) -> String {
+        self.create_fmt_string(&self.format)
     }
 
     // Note: なぜ`str.replace`やRegexクレートを使わずに置換処理を作成したのか
@@ -101,6 +116,11 @@ impl BuildMetaData {
     /// | date,<br>d           | `date.{date}`<br>`{d:%Y/%m/%d %H:%M}`           | `date.20250220`<br>`20250220`  | future: strftime support                              |
     /// | hash,<br>h           | `hash.{hash}`<br>`{hash:4}`      | `hash.fef16c61`<br>`hash.fef1` | After `:`, specify display digits (default: 8 digits) |
     pub fn show_fmt(&self, fmt: &str) {
+        let t = self.create_fmt_string(fmt);
+        println!("{}", t);
+    }
+
+    fn create_fmt_string(&self, fmt: &str) -> String {
         let mut result = String::from("+");
         let mut chars = fmt.chars().peekable();
         while let Some(ch) = chars.next() {
@@ -128,7 +148,7 @@ impl BuildMetaData {
                 result.push(ch);
             }
         }
-        println!("{}", &result);
+        result.to_string()
     }
 
     /// Increment BuildNumber
@@ -175,18 +195,16 @@ impl Default for BuildMetaData {
     fn default() -> Self {
         Self {
             number: Default::default(),
-            date: Local::now().format("%Y%m%d").to_string(),
+            date: Local::now().to_rfc3339(),
             hash: get_commit_hash().unwrap_or(String::new()),
+            format: "{number}.{date:%Y%m%d}.{hash:8}".to_string(),
         }
     }
 }
 
 impl fmt::Display for BuildMetaData {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "+build.{}", &self.number)?;
-        write!(f, ".{}", &self.date)?;
-        write!(f, ".{}", self.hash_haed(8))?;
-        write!(f, "")
+        write!(f, "{}", self.create_string())
     }
 }
 

@@ -12,6 +12,7 @@ pub use show::*;
 mod increment;
 pub use increment::*;
 mod pre;
+pub use pre::*;
 
 mod identifier;
 
@@ -71,6 +72,17 @@ impl FuVer {
     pub fn show_prerelease(&self) {
         if let Some(pre) = &self.pre {
             pre.show();
+        } else {
+            eprintln!("プレリリース情報はありません")
         }
+    }
+
+    pub fn set_prerelease(&mut self, tag: &str, number: Option<usize>) -> PreResult {
+        let mut p = PreRelease::new(tag)?;
+        if let Some(n) = number {
+            p.set_number(n)?;
+        };
+        self.pre = Some(p);
+        Ok(())
     }
 }

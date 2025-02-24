@@ -3,7 +3,7 @@ use std::{fmt, result};
 
 use crate::identifier::{check_tag, FormatError};
 
-pub type Result = result::Result<(), FormatError>;
+pub type PreResult = result::Result<(), FormatError>;
 
 /// Pre-release version information for semantic versioning
 ///
@@ -73,7 +73,7 @@ impl PreRelease {
     ///
     /// # Errors
     /// empty or invalid character included
-    pub fn set_tag(&mut self, tag: &str) -> Result {
+    pub fn set_tag(&mut self, tag: &str) -> PreResult {
         check_tag(tag)?;
         self.tag = tag.to_string();
         Ok(())
@@ -83,7 +83,7 @@ impl PreRelease {
     ///
     /// # Errors
     /// number is 0
-    pub fn set_number(&mut self, number: usize) -> Result {
+    pub fn set_number(&mut self, number: usize) -> PreResult {
         if number == 0 {
             return Err(FormatError::InvalidNumber);
         }
@@ -96,7 +96,7 @@ impl PreRelease {
     /// # Errors
     /// tag empty or invalid character included
     /// number is 0
-    pub fn set(&mut self, tag: &str, number: usize) -> Result {
+    pub fn set(&mut self, tag: &str, number: usize) -> PreResult {
         self.set_tag(tag)?;
         self.set_number(number)?;
         Ok(())

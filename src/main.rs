@@ -12,6 +12,13 @@ enum SubCommands {
         #[command(subcommand)]
         command: Option<ShowCommands>,
     },
+    Set {
+        #[command(subcommand)]
+        command: SetCommands,
+    },
+    Remove {
+        target: RemoveTarget,
+    },
     Increment {
         #[command(subcommand)]
         command: Option<IncrementCommands>,
@@ -24,6 +31,22 @@ enum SubCommands {
     },
 }
 
+#[derive(Subcommand)]
+pub enum SetCommands {
+    Version,
+    Pre {
+        tag: String,
+        number: Option<usize>,
+        #[arg(short, long)]
+        silent: bool,
+    },
+    Build,
+}
+
+#[derive(clap::ValueEnum, Clone)]
+enum RemoveTarget {
+    Pre,
+}
 #[derive(clap::ValueEnum, Clone)]
 enum IncrementType {
     Version,
@@ -46,12 +69,29 @@ fn init(f: &Path) -> io::Result<()> {
     Ok(())
 }
 
+fn run_set_cmd(cmd: SetCommands, c: &mut FuVer) {
+    match cmd {
+        SetCommands::Version => {}
+        SetCommands::Pre {
+            tag,
+            number,
+            silent,
+        } => {
+            let _ = c.set_prerelease(&tag, number);
+            if !silent {
+                c.show_prerelease();
+            }
+        }
+        SetCommands::Build => todo!(),
+    }
+}
 fn run_cmd(cmd: SubCommands, c: &mut FuVer) {
     match cmd {
         SubCommands::Show { command } => match command {
             Some(cmd) => run_show_cmd(cmd, c),
             None => println!("{}", c),
         },
+        SubCommands::Set { command } => run_set_cmd(command, c),
         SubCommands::Increment { command } => {
             match command {
                 Some(cmd) => run_increment(cmd, c).unwrap(),
@@ -73,6 +113,9 @@ fn run_cmd(cmd: SubCommands, c: &mut FuVer) {
             // }
         }
         SubCommands::Init => {}
+        SubCommands::Remove { target } => match target {
+            RemoveTarget::Pre => c.pre = None,
+        },
     }
 }
 

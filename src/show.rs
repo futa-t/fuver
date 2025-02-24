@@ -5,6 +5,7 @@ use crate::FuVer;
 #[derive(Subcommand, Clone)]
 pub enum ShowCommands {
     Version,
+    Pre,
     Build {
         #[command(subcommand)]
         command: Option<ShowBuildCommands>,
@@ -36,6 +37,7 @@ pub enum ShowBuildCommands {
 pub fn run_show_cmd(command: ShowCommands, c: &mut FuVer) {
     match command {
         ShowCommands::Version => c.show_version(),
+        ShowCommands::Pre => c.show_prerelease(),
         ShowCommands::Build { command, format } => {
             if let Some(fmt) = format {
                 c.build.show_fmt(&fmt);

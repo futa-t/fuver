@@ -12,7 +12,8 @@ pub use show::*;
 mod increment;
 pub use increment::*;
 mod pre;
-pub use pre::*;
+
+mod identifier;
 
 #[derive(Serialize, Deserialize)]
 pub struct FuVer {
@@ -20,7 +21,7 @@ pub struct FuVer {
     pub version: Version,
 
     #[serde(default)]
-    pub pre: Option<String>,
+    pub pre: Option<pre::PreRelease>,
 
     #[serde(default)]
     pub build: BuildMetaData,
@@ -30,7 +31,7 @@ impl fmt::Display for FuVer {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.version)?;
         if let Some(p) = &self.pre {
-            write!(f, "-{}", p)?;
+            write!(f, "{}", p)?;
         }
         write!(f, "{}", self.build)
     }
@@ -65,5 +66,11 @@ impl FuVer {
 
     pub fn save(&self, p: &Path) {
         fs::write(p, toml::to_string(&self).unwrap()).unwrap();
+    }
+
+    pub fn show_prerelease(&self) {
+        if let Some(pre) = &self.pre {
+            pre.show();
+        }
     }
 }

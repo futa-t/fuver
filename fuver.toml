@@ -1,5 +1,8 @@
 version = "0.5.0"
 
+[pre]
+tag = "beta"
+
 [build]
 number = 589
 date = "2025-02-23T21:55:05.204050200+09:00"

@@ -11,6 +11,8 @@ mod show;
 pub use show::*;
 mod increment;
 pub use increment::*;
+mod pre;
+pub use pre::*;
 
 #[derive(Serialize, Deserialize)]
 pub struct FuVer {

@@ -6,15 +6,13 @@ use std::path::Path;
 mod version;
 use version::*;
 pub mod buildmeta;
+mod identifier;
+pub mod pre;
 
 mod show;
 pub use show::*;
 mod increment;
 pub use increment::*;
-mod pre;
-pub use pre::*;
-
-mod identifier;
 
 #[derive(Serialize, Deserialize)]
 pub struct FuVer {
@@ -77,8 +75,8 @@ impl FuVer {
         }
     }
 
-    pub fn set_prerelease(&mut self, tag: &str, number: Option<usize>) -> identifier::Result<()> {
-        let mut p = PreRelease::new(tag)?;
+    pub fn set_prerelease(&mut self, tag: &str, number: Option<usize>) -> pre::Result<()> {
+        let mut p = pre::PreRelease::new(tag)?;
         if let Some(n) = number {
             p.set_number(n)?;
         };

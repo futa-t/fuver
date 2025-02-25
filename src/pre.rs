@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::fmt;
+use std::{fmt, result};
 
 use crate::identifier;
 
@@ -22,6 +22,26 @@ impl fmt::Display for PreRelease {
     }
 }
 
+pub type Result<T> = result::Result<T, PreReleaseError>;
+
+#[derive(Debug)]
+pub enum PreReleaseError {
+    Format(String),
+    InvalidNumber(usize),
+}
+
+impl fmt::Display for PreReleaseError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            PreReleaseError::Format(s) => write!(f, "フォーマットが不正です: {}", s),
+            PreReleaseError::InvalidNumber(n) => write!(f, "数値に{}は指定できません", n),
+        }
+    }
+}
+
+fn check_identifier(tag: &str) -> Result<()> {
+    identifier::check_identifier(tag).map_err(|e| PreReleaseError::Format(e.to_string()))
+}
 impl PreRelease {
     /// Creates a new PreRelease with tag.
     ///
@@ -38,8 +58,8 @@ impl PreRelease {
     /// let pre = PreRelease::new("alpha").unwrap();
     /// assert_eq!(pre.to_string(), "-alpha");
     /// ```
-    pub fn new(tag: &str) -> identifier::Result<PreRelease> {
-        identifier::check_identifier(tag)?;
+    pub fn new(tag: &str) -> Result<PreRelease> {
+        check_identifier(tag)?;
         Ok(PreRelease {
             tag: tag.to_string(),
             number: None,
@@ -51,8 +71,8 @@ impl PreRelease {
     /// # Errors
     /// * tag empty or invalid character included
     /// * number is 0
-    pub fn with_number(tag: &str, number: usize) -> identifier::Result<PreRelease> {
-        identifier::check_identifier(tag)?;
+    pub fn with_number(tag: &str, number: usize) -> Result<PreRelease> {
+        check_identifier(tag)?;
         Ok(PreRelease {
             tag: tag.to_string(),
             number: Some(number),
@@ -71,8 +91,8 @@ impl PreRelease {
     ///
     /// # Errors
     /// empty or invalid character included
-    pub fn set_tag(&mut self, tag: &str) -> identifier::Result<()> {
-        identifier::check_identifier(tag)?;
+    pub fn set_tag(&mut self, tag: &str) -> Result<()> {
+        check_identifier(tag)?;
         self.tag = tag.to_string();
         Ok(())
     }
@@ -81,9 +101,9 @@ impl PreRelease {
     ///
     /// # Errors
     /// number is 0
-    pub fn set_number(&mut self, number: usize) -> identifier::Result<()> {
+    pub fn set_number(&mut self, number: usize) -> Result<()> {
         if number == 0 {
-            return Err(identifier::FormatError::InvalidNumber);
+            return Err(PreReleaseError::InvalidNumber(number));
         }
         self.number = Some(number);
         Ok(())
@@ -94,7 +114,7 @@ impl PreRelease {
     /// # Errors
     /// tag empty or invalid character included
     /// number is 0
-    pub fn set(&mut self, tag: &str, number: usize) -> identifier::Result<()> {
+    pub fn set(&mut self, tag: &str, number: usize) -> Result<()> {
         self.set_tag(tag)?;
         self.set_number(number)?;
         Ok(())

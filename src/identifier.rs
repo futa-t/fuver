@@ -6,7 +6,6 @@ pub type Result<T> = result::Result<T, FormatError>;
 pub enum FormatError {
     EmptyTag,
     InvalidChar(char),
-    InvalidNumber,
 }
 
 impl fmt::Display for FormatError {
@@ -16,7 +15,6 @@ impl fmt::Display for FormatError {
             FormatError::InvalidChar(c) => {
                 write!(f, "対応していない文字が含まれています: {}", c)
             }
-            FormatError::InvalidNumber => write!(f, "数値の指定が間違えています"),
         }
     }
 }

@@ -18,6 +18,7 @@ pub type Result<T> = result::Result<T, BuildMetaError>;
 
 #[derive(Debug)]
 pub enum BuildMetaError {
+    Undefined,
     Format(String),
     Overflow(usize),
     Git(String),
@@ -31,6 +32,7 @@ impl fmt::Display for BuildMetaError {
             BuildMetaError::Git(s) => write!(f, "Git情報の取得に失敗しました: {}", s),
             BuildMetaError::Date => write!(f, "日時の取得に失敗しました"),
             BuildMetaError::Overflow(n) => write!(f, "数値が指定できる範囲を超えています: {}+1", n),
+            &BuildMetaError::Undefined => write!(f, "ビルド情報が定義されていません"),
         }
     }
 }

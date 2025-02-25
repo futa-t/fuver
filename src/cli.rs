@@ -1,15 +1,17 @@
-use std::{env, path::PathBuf};
+use std::{env, fs};
 
+use crate::fuver::{self, FuVer, FuVerError};
 use clap::Parser;
+use std::str::FromStr;
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
 const DEFAULT_FILE: &str = concat!(env!("CARGO_PKG_NAME"), ".toml");
 
-#[derive(clap::ValueEnum, Debug, Clone)]
+#[derive(clap::Subcommand, Debug, Clone)]
 enum VersionTarget {
     Major,
     Minor,
     Patch,
+    Mask { pattern: String },
 }
 
 #[derive(clap::ValueEnum, Debug, Clone)]
@@ -23,12 +25,14 @@ enum BuildMetaDataTarget {
     Number,
     Date,
     Hash,
+    All,
 }
 
 #[derive(clap::Subcommand, Debug)]
 enum IncrementCommands {
     #[command(visible_alias = "ver")]
     Version {
+        #[command(subcommand)]
         target: VersionTarget,
     },
     Major,
@@ -55,7 +59,10 @@ enum SetCommands {
 #[derive(clap::Subcommand, Debug)]
 enum ShowCommands {
     #[command(visible_alias = "ver")]
-    Version { target: Option<VersionTarget> },
+    Version {
+        #[command(subcommand)]
+        target: Option<VersionTarget>,
+    },
     #[command(visible_alias = "pre")]
     PreRelease { target: Option<PreReleaseTarget> },
     #[command(visible_alias = "build")]
@@ -70,7 +77,7 @@ enum ShowCommands {
 enum Commands {
     Init {
         #[arg(default_value = DEFAULT_FILE)]
-        config: Option<PathBuf>,
+        config: Option<String>,
     },
     #[command(visible_alias = "incr")]
     Increment {
@@ -94,20 +101,54 @@ enum Commands {
 #[derive(clap::Parser, Debug)]
 pub struct Args {
     #[arg(short, long, default_value = DEFAULT_FILE)]
-    config: Option<PathBuf>,
+    config: Option<String>,
 
     #[command(subcommand)]
     cmd: Commands,
 }
 
-impl Args {
-    pub fn show(&self) {
-        println!("{:#?}", self);
-    }
+fn run_increment(cmd: IncrementCommands, fv: &mut FuVer) -> fuver::Result<()> {
+    match cmd {
+        IncrementCommands::Version { target } => match target {
+            VersionTarget::Major => fv.incr_ver_major(),
+            VersionTarget::Minor => fv.incr_ver_minor(),
+            VersionTarget::Patch => fv.incr_ver_patch(),
+            VersionTarget::Mask { pattern } => fv.incr_ver_mask(&pattern),
+        },
+        IncrementCommands::Major => fv.incr_ver_major(),
+        IncrementCommands::Minor => fv.incr_ver_minor(),
+        IncrementCommands::Patch => fv.incr_ver_patch(),
+
+        IncrementCommands::PreRelease => fv.incr_pre(),
+
+        IncrementCommands::BuildMetaData { target } => match target {
+            Some(t) => match t {
+                BuildMetaDataTarget::Number => fv.incr_build_num(),
+                BuildMetaDataTarget::Date => fv.incr_build_date(),
+                BuildMetaDataTarget::Hash => fv.incr_build_hash(),
+                BuildMetaDataTarget::All => fv.incr_build_all(),
+            },
+            None => fv.incr_build_num(),
+        },
+    }?;
+    Ok(())
 }
 
-pub fn main() {
+pub fn main() -> fuver::Result<()> {
     let args = Args::parse();
-    println!("fuver {}", VERSION);
-    args.show();
+    let conf_path = args.config.as_ref().unwrap();
+    let file_str = fs::read_to_string(conf_path).map_err(FuVerError::IO)?;
+    let mut c = FuVer::from_str(&file_str)?;
+
+    match args.cmd {
+        Commands::Init { config } => todo!(),
+        Commands::Increment { silent, target } => run_increment(target, &mut c),
+        Commands::Set { silent, target } => todo!(),
+        Commands::Show { target } => {
+            println!("{}", c.version);
+            Ok(())
+        }
+    }?;
+    c.save(conf_path);
+    Ok(())
 }

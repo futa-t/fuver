@@ -35,9 +35,7 @@ enum IncrementCommands {
     Minor,
     Patch,
     #[command(visible_alias = "pre")]
-    PreRelease {
-        number: usize,
-    },
+    PreRelease,
     #[command(visible_alias = "build")]
     BuildMetaData {
         target: Option<BuildMetaDataTarget>,

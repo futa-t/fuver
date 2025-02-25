@@ -5,6 +5,6 @@ tag = "beta"
 
 [build]
 number = 589
-date = "2025-02-23T21:55:05.204050200+09:00"
-hash = "8b3ba23beb56e7673d2dabf22029851fcfc2c52a"
+date = "2025-02-25T19:24:41.685156600+09:00"
+hash = "df253922364f63bff89a09c2bacb2fab1249b12c"
 format = "build.{number}.{date:%Y%m%d}"

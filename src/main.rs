@@ -88,7 +88,10 @@ fn run_set_cmd(cmd: SetCommands, c: &mut FuVer) {
 fn run_cmd(cmd: SubCommands, c: &mut FuVer) {
     match cmd {
         SubCommands::Show { command } => match command {
-            Some(cmd) => run_show_cmd(cmd, c),
+            Some(cmd) => match run_show_cmd(cmd, c) {
+                Ok(()) => {}
+                Err(e) => eprintln!("{}", e.to_string()),
+            },
             None => println!("{}", c),
         },
         SubCommands::Set { command } => run_set_cmd(command, c),

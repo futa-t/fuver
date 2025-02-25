@@ -77,7 +77,7 @@ impl FuVer {
         }
     }
 
-    pub fn set_prerelease(&mut self, tag: &str, number: Option<usize>) -> PreResult {
+    pub fn set_prerelease(&mut self, tag: &str, number: Option<usize>) -> identifier::Result<()> {
         let mut p = PreRelease::new(tag)?;
         if let Some(n) = number {
             p.set_number(n)?;

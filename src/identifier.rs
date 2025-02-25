@@ -1,4 +1,6 @@
-use std::fmt;
+use std::{fmt, result};
+
+pub type Result<T> = result::Result<T, FormatError>;
 
 #[derive(Debug)]
 pub enum FormatError {
@@ -14,12 +16,22 @@ impl fmt::Display for FormatError {
             FormatError::InvalidChar(c) => {
                 write!(f, "対応していない文字が含まれています: {}", c)
             }
-            FormatError::InvalidNumber => write!(f, "0は指定できません"),
+            FormatError::InvalidNumber => write!(f, "数値の指定が間違えています"),
         }
     }
 }
 
-pub fn check_tag(s: &str) -> Result<(), FormatError> {
+pub fn check_dot_separated_identifiers(s: &str) -> Result<()> {
+    if s.is_empty() {
+        return Err(FormatError::EmptyTag);
+    }
+    for part in s.split(".") {
+        check_identifier(part)?
+    }
+    Ok(())
+}
+
+pub fn check_identifier(s: &str) -> Result<()> {
     if s.is_empty() {
         return Err(FormatError::EmptyTag);
     }

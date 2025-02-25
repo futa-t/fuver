@@ -1,5 +1,6 @@
 use std::fmt;
 
+use crate::identifier;
 use chrono::{DateTime, Local};
 use git2::Repository;
 use serde::{Deserialize, Serialize};
@@ -47,11 +48,12 @@ impl BuildMetaData {
     }
 
     /// Print from Config Format
-    pub fn show(&self) {
-        println!("{}", self.create_string());
+    pub fn show(&self) -> identifier::Result<()> {
+        println!("{}", self.create_string()?);
+        Ok(())
     }
 
-    fn create_string(&self) -> String {
+    fn create_string(&self) -> identifier::Result<String> {
         self.create_fmt_string(&self.format)
     }
 
@@ -114,13 +116,14 @@ impl BuildMetaData {
     /// | number,<br>num,<br>n | `build.{number}`<br>`build{num}` | `build.123`<br>`build123`      |                                                       |
     /// | date,<br>d           | `date.{date}`<br>`{d:%Y/%m/%d %H:%M}`           | `date.20250220`<br>`20250220`  | future: strftime support                              |
     /// | hash,<br>h           | `hash.{hash}`<br>`{hash:4}`      | `hash.fef16c61`<br>`hash.fef1` | After `:`, specify display digits (default: 8 digits) |
-    pub fn show_fmt(&self, fmt: &str) {
-        let t = self.create_fmt_string(fmt);
+    pub fn show_fmt(&self, fmt: &str) -> identifier::Result<()> {
+        let t = self.create_fmt_string(fmt)?;
         println!("{}", t);
+        Ok(())
     }
 
-    fn create_fmt_string(&self, fmt: &str) -> String {
-        let mut result = String::from("+");
+    fn create_fmt_string(&self, fmt: &str) -> identifier::Result<String> {
+        let mut result = String::new();
         let mut chars = fmt.chars().peekable();
         while let Some(ch) = chars.next() {
             if ch == '\\' {
@@ -147,23 +150,24 @@ impl BuildMetaData {
                 result.push(ch);
             }
         }
-        result.to_string()
+        identifier::check_dot_separated_identifiers(&result)?;
+        Ok(result.to_string())
     }
 
     /// Increment BuildNumber
     ///
     /// # Errors
     /// Overflow BuildNumber.
-    pub fn increment_number(&mut self) -> Result<(), BuildMetaError> {
+    pub fn increment_number(&mut self) -> identifier::Result<()> {
         self.number = self
             .number
             .checked_add(1)
-            .ok_or(BuildMetaError::from("Number overflow".to_string()))?;
+            .ok_or(identifier::FormatError::InvalidNumber)?;
         Ok(())
     }
 
     /// Update BuildDate to today
-    pub fn update_date(&mut self) -> Result<(), BuildMetaError> {
+    pub fn update_date(&mut self) -> identifier::Result<()> {
         self.date = Local::now().to_rfc3339();
         Ok(())
     }
@@ -172,9 +176,8 @@ impl BuildMetaData {
     ///
     /// # Errors
     /// git2::Error
-    pub fn update_hash(&mut self) -> Result<(), BuildMetaError> {
-        let hash = get_commit_hash().map_err(|e| BuildMetaError::from(e.to_string()))?;
-        self.hash = hash;
+    pub fn update_hash(&mut self) -> Result<(), git2::Error> {
+        self.hash = get_commit_hash()?;
         Ok(())
     }
 
@@ -203,7 +206,13 @@ impl Default for BuildMetaData {
 
 impl fmt::Display for BuildMetaData {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.create_string())
+        match self.create_string() {
+            Ok(s) => write!(f, "{}", s),
+            Err(e) => {
+                eprintln!("{}", e);
+                Err(std::fmt::Error)
+            }
+        }
     }
 }
 

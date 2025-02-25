@@ -34,14 +34,13 @@ pub enum ShowBuildCommands {
     Hash,
 }
 
-pub fn run_show_cmd(command: ShowCommands, c: &mut FuVer) {
+pub fn run_show_cmd(command: ShowCommands, c: &mut FuVer) -> Result<(), String> {
     match command {
         ShowCommands::Version => c.show_version(),
         ShowCommands::Pre => c.show_prerelease(),
         ShowCommands::Build { command, format } => {
             if let Some(fmt) = format {
-                c.build.show_fmt(&fmt);
-                return;
+                return c.build.show_fmt(&fmt).map_err(|e| e.to_string());
             }
             match command {
                 Some(ShowBuildCommands::Number) => c.build.show_fmt("build.{number}"),
@@ -49,6 +48,8 @@ pub fn run_show_cmd(command: ShowCommands, c: &mut FuVer) {
                 Some(ShowBuildCommands::Hash) => c.build.show_fmt("hash.{hash:8}"),
                 None => c.build.show(),
             }
+            .map_err(|e| e.to_string())?
         }
     }
+    Ok(())
 }

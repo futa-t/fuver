@@ -3,11 +3,10 @@ use std::fmt;
 use std::fs;
 use std::path::Path;
 
-mod version;
-use version::*;
 pub mod buildmeta;
 mod identifier;
 pub mod pre;
+pub mod version;
 
 mod show;
 pub use show::*;
@@ -17,7 +16,7 @@ pub use increment::*;
 #[derive(Serialize, Deserialize)]
 pub struct FuVer {
     #[serde(default)]
-    pub version: Version,
+    pub version: version::Version,
 
     #[serde(default)]
     pub pre: Option<pre::PreRelease>,
@@ -44,7 +43,7 @@ impl FuVer {
 
     pub fn increment_version(&mut self, mask: &str) -> Result<(), String> {
         let m_part: Vec<usize> = self.part_mask(mask)?;
-        let m_version = Version::new(m_part[0], m_part[1], m_part[2]);
+        let m_version = version::Version::new(m_part[0], m_part[1], m_part[2]);
 
         self.version += m_version;
 

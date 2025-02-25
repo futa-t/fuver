@@ -1,4 +1,8 @@
-version = "0.6.2"
+[version]
+major = 0
+minor = 7
+patch = 0
+str = "0.7.0"
 
 [pre]
 tag = "beta"

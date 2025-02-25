@@ -97,7 +97,11 @@ fn run_cmd(cmd: SubCommands, c: &mut FuVer) {
         SubCommands::Set { command } => run_set_cmd(command, c),
         SubCommands::Increment { command } => {
             match command {
-                Some(cmd) => run_increment(cmd, c),
+                Some(cmd) => match run_increment(cmd, c) {
+                    Ok(_) => {}
+                    Err(e) => eprintln!("{}", e),
+                },
+
                 None => println!("{}", c),
             }
             //     In::Version => {

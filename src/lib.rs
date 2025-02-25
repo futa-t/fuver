@@ -5,8 +5,8 @@ use std::path::Path;
 
 mod version;
 use version::*;
-mod buildmeta;
-pub use buildmeta::*;
+pub mod buildmeta;
+
 mod show;
 pub use show::*;
 mod increment;
@@ -25,16 +25,16 @@ pub struct FuVer {
     pub pre: Option<pre::PreRelease>,
 
     #[serde(default)]
-    pub build: BuildMetaData,
+    pub build: buildmeta::BuildMetaData,
 }
 
 impl fmt::Display for FuVer {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.version)?;
         if let Some(p) = &self.pre {
-            write!(f, "{}", p)?;
+            write!(f, "-{}", p)?;
         }
-        write!(f, "{}", self.build)
+        write!(f, "+{}", self.build)
     }
 }
 

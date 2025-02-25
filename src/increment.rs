@@ -18,8 +18,8 @@ pub enum IncrementBuildCommands {
     Hash,
 }
 
-pub fn run_increment(cmd: IncrementCommands, c: &mut FuVer) -> Result<(), String> {
-    match cmd {
+pub fn run_increment(cmd: IncrementCommands, c: &mut FuVer) {
+    let _ = match cmd {
         IncrementCommands::Version => c.increment_version("x.x.1"),
         IncrementCommands::Build { command } => match command {
             Some(IncrementBuildCommands::Number) => c.build.increment_number(),
@@ -28,5 +28,5 @@ pub fn run_increment(cmd: IncrementCommands, c: &mut FuVer) -> Result<(), String
             None => Ok(()),
         }
         .map_err(|e| e.to_string()),
-    }
+    };
 }

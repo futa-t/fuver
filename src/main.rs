@@ -90,14 +90,14 @@ fn run_cmd(cmd: SubCommands, c: &mut FuVer) {
         SubCommands::Show { command } => match command {
             Some(cmd) => match run_show_cmd(cmd, c) {
                 Ok(()) => {}
-                Err(e) => eprintln!("{}", e.to_string()),
+                Err(e) => eprintln!("{}", e),
             },
             None => println!("{}", c),
         },
         SubCommands::Set { command } => run_set_cmd(command, c),
         SubCommands::Increment { command } => {
             match command {
-                Some(cmd) => run_increment(cmd, c).unwrap(),
+                Some(cmd) => run_increment(cmd, c),
                 None => println!("{}", c),
             }
             //     In::Version => {

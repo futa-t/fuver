@@ -14,7 +14,7 @@ pub struct PreRelease {
 
 impl fmt::Display for PreRelease {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "-{}", &self.tag)?;
+        write!(f, "{}", &self.tag)?;
         if let Some(n) = self.number {
             write!(f, ".{}", n)?;
         }

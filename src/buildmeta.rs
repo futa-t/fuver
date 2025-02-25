@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, result};
 
 use crate::identifier;
 use chrono::{DateTime, Local};
@@ -9,25 +9,29 @@ use serde::{Deserialize, Serialize};
 #[serde(default)]
 pub struct BuildMetaData {
     pub number: usize,
-    pub date: String,
-    pub hash: String,
+    date: String,
+    hash: String,
     format: String,
 }
 
-#[derive(Debug)]
-pub struct BuildMetaError {
-    msg: String,
-}
+pub type Result<T> = result::Result<T, BuildMetaError>;
 
-impl From<String> for BuildMetaError {
-    fn from(message: String) -> Self {
-        BuildMetaError { msg: message }
-    }
+#[derive(Debug)]
+pub enum BuildMetaError {
+    Format(String),
+    Overflow(usize),
+    Git(String),
+    Date,
 }
 
 impl fmt::Display for BuildMetaError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.msg)
+        match self {
+            BuildMetaError::Format(s) => write!(f, "フォーマットが不正です: {}", s),
+            BuildMetaError::Git(s) => write!(f, "Git情報の取得に失敗しました: {}", s),
+            BuildMetaError::Date => write!(f, "日時の取得に失敗しました"),
+            BuildMetaError::Overflow(n) => write!(f, "数値が指定できる範囲を超えています: {}+1", n),
+        }
     }
 }
 
@@ -43,14 +47,20 @@ impl BuildMetaData {
 
     /// Print Full BuildMetaData
     /// example: `+build.123.20250220.fef16c61`
-    pub fn show_all(&self) {
+    pub fn show_all(&self) -> Result<()> {
         println!("{}", &self);
+        Ok(())
     }
 
     /// Print from Config Format
-    pub fn show(&self) -> identifier::Result<()> {
-        println!("{}", self.create_string()?);
-        Ok(())
+    pub fn show(&self) -> Result<()> {
+        match self.create_string() {
+            Ok(s) => {
+                println!("{}", s);
+                Ok(())
+            }
+            Err(e) => Err(BuildMetaError::Format(e.to_string())),
+        }
     }
 
     fn create_string(&self) -> identifier::Result<String> {
@@ -79,7 +89,7 @@ impl BuildMetaData {
     // ただし、ウンウンと頭を捻りながら数時間悩むのならば話は別である。こねくりまわして作成したコードは大体のちに悩みの種になるので。
     //
     // 現在依存している`clap`や`serde`、`toml`に関しても最終的には依存を外して自前実装にするつもり。
-    fn fmt_replace(&self, opt: &str) -> Result<String, BuildMetaError> {
+    fn fmt_replace(&self, opt: &str) -> Result<String> {
         let o: Vec<&str> = opt.split(":").collect();
 
         let ret = match o[0] {
@@ -102,7 +112,7 @@ impl BuildMetaData {
                 self.hash_haed(n)
             }
             _ => {
-                return Err(BuildMetaError::from(opt.to_string()));
+                return Err(BuildMetaError::Format(opt.to_string()));
             }
         };
         Ok(ret)
@@ -116,8 +126,10 @@ impl BuildMetaData {
     /// | number,<br>num,<br>n | `build.{number}`<br>`build{num}` | `build.123`<br>`build123`      |                                                       |
     /// | date,<br>d           | `date.{date}`<br>`{d:%Y/%m/%d %H:%M}`           | `date.20250220`<br>`20250220`  | future: strftime support                              |
     /// | hash,<br>h           | `hash.{hash}`<br>`{hash:4}`      | `hash.fef16c61`<br>`hash.fef1` | After `:`, specify display digits (default: 8 digits) |
-    pub fn show_fmt(&self, fmt: &str) -> identifier::Result<()> {
-        let t = self.create_fmt_string(fmt)?;
+    pub fn show_fmt(&self, fmt: &str) -> Result<()> {
+        let t = self
+            .create_fmt_string(fmt)
+            .map_err(|e| BuildMetaError::Format(e.to_string()))?;
         println!("{}", t);
         Ok(())
     }
@@ -134,7 +146,7 @@ impl BuildMetaData {
                 let mut opt = String::new();
                 let mut tmp = String::new();
                 tmp.push(ch);
-                while let Some(o) = chars.next() {
+                for o in chars.by_ref() {
                     tmp.push(o);
                     if o == '}' {
                         break;
@@ -158,16 +170,16 @@ impl BuildMetaData {
     ///
     /// # Errors
     /// Overflow BuildNumber.
-    pub fn increment_number(&mut self) -> identifier::Result<()> {
+    pub fn increment_number(&mut self) -> Result<()> {
         self.number = self
             .number
             .checked_add(1)
-            .ok_or(identifier::FormatError::InvalidNumber)?;
+            .ok_or(BuildMetaError::Overflow(self.number))?;
         Ok(())
     }
 
     /// Update BuildDate to today
-    pub fn update_date(&mut self) -> identifier::Result<()> {
+    pub fn update_date(&mut self) -> Result<()> {
         self.date = Local::now().to_rfc3339();
         Ok(())
     }
@@ -176,9 +188,22 @@ impl BuildMetaData {
     ///
     /// # Errors
     /// git2::Error
-    pub fn update_hash(&mut self) -> Result<(), git2::Error> {
-        self.hash = get_commit_hash()?;
+    pub fn update_hash(&mut self) -> Result<()> {
+        let hash = get_commit_hash().map_err(|e| BuildMetaError::Git(e.to_string()))?;
+        self.hash = hash;
         Ok(())
+    }
+
+    pub fn get_number(&self) -> usize {
+        self.number
+    }
+
+    pub fn get_date(&self) -> String {
+        self.date.clone()
+    }
+
+    pub fn get_hash(&self) -> String {
+        self.hash.to_string()
     }
 
     fn hash_haed(&self, size: usize) -> String {
@@ -198,7 +223,7 @@ impl Default for BuildMetaData {
         Self {
             number: Default::default(),
             date: Local::now().to_rfc3339(),
-            hash: get_commit_hash().unwrap_or(String::new()),
+            hash: get_commit_hash().unwrap_or_default(),
             format: "{number}.{date:%Y%m%d}.{hash:8}".to_string(),
         }
     }
@@ -208,15 +233,12 @@ impl fmt::Display for BuildMetaData {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.create_string() {
             Ok(s) => write!(f, "{}", s),
-            Err(e) => {
-                eprintln!("{}", e);
-                Err(std::fmt::Error)
-            }
+            Err(e) => write!(f, "{}", e),
         }
     }
 }
 
-fn get_commit_hash() -> Result<String, git2::Error> {
+fn get_commit_hash() -> result::Result<String, git2::Error> {
     let repo = Repository::open(".")?;
     let head = repo.head()?;
     let commit = head.peel_to_commit()?;

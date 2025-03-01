@@ -26,6 +26,7 @@ pub type Result<T> = result::Result<T, PreReleaseError>;
 
 #[derive(Debug)]
 pub enum PreReleaseError {
+    Undefined,
     Format(String),
     InvalidNumber(usize),
     Overflow(usize),
@@ -39,6 +40,7 @@ impl fmt::Display for PreReleaseError {
             PreReleaseError::Overflow(n) => {
                 write!(f, "数値が指定できる範囲を超えています: {}+1", n)
             }
+            PreReleaseError::Undefined => write!(f, "プレリリースが定義されていません"),
         }
     }
 }

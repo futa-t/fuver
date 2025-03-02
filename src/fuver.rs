@@ -15,6 +15,7 @@ pub type Result<T> = result::Result<T, FuVerError>;
 #[derive(Debug)]
 pub enum FuVerError {
     IO(io::Error),
+    InitError(String),
     Deserialize(toml::de::Error),
     Version(version::VersionError),
     Error(String),
@@ -27,11 +28,12 @@ impl fmt::Display for FuVerError {
             FuVerError::Deserialize(e) => write!(f, "Desirialize Error: {}", e),
             FuVerError::Version(e) => write!(f, "Version Error: {}", e),
             FuVerError::Error(e) => write!(f, "Error: {}", e),
+            FuVerError::InitError(e) => write!(f, "Initialize Error: {}", e),
         }
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct FuVer {
     #[serde(default)]
     pub version: version::Version,

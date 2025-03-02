@@ -8,15 +8,19 @@
 pre-commitに追加してみたり
 ```pre-commit
 #!/bin/sh
-fuver increment version x.x.1
-git add fuver.toml
+fuver increment patch 
+NEW_VERSION=$(fuver show version)
+if [ -n "$NEW_VERSION" ]; then
+    sed -i "s/^version = \".*\"/version = \"$NEW_VERSION\"/" Cargo.toml
+    cargo update
+    git add Cargo.toml Cargo.lock
+fi
 ```
 
 各種prebuildツールに`fuver invrement build`追加したり
 
 todo
-- Cargo.tomlとかpyproject.tomlとかのバージョンも触れる設定つくる
+- ~~Cargo.tomlとかpyproject.tomlとかのバージョンも触れる設定つくる~~  
+導入先のhookで対応したほうが安全そうなのでやめた
+
 - れどめ整備
-- `x.x.1`みたいな形式だけじゃなくてmajor, minor, patchとかでインクリメントできるようにする
-- プレリリースの追加できるようにする
-- 上位が更新されたときの下位リセット

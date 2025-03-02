@@ -1,6 +1,6 @@
 [package]
 name = "fuver"
-version = "0.8.2"
+version = "0.8.4"
 authors = ["futa-t"]
 edition = "2021"
 description = "バージョン管理用のCLIツールです"

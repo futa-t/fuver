@@ -1,4 +1,8 @@
-use std::{env, fs};
+use std::{
+    env,
+    fs::{self, File},
+    path::PathBuf,
+};
 
 use crate::fuver::{self, FuVer, FuVerError};
 use clap::Parser;
@@ -77,7 +81,7 @@ enum ShowCommands {
 enum Commands {
     Init {
         #[arg(default_value = DEFAULT_FILE)]
-        config: Option<String>,
+        file: String,
     },
     #[command(visible_alias = "incr")]
     Increment {
@@ -134,6 +138,21 @@ fn run_increment(cmd: IncrementCommands, fv: &mut FuVer) -> fuver::Result<()> {
     Ok(())
 }
 
+fn run_init(file: &str) -> fuver::Result<()> {
+    let p = PathBuf::from(file);
+    if p.exists() {
+        return Err(FuVerError::InitError("Already initialized.".to_string()));
+    }
+    File::create(&p).map_err(FuVerError::IO)?;
+    let default = FuVer::default();
+    let toml_str = toml::to_string(&default).map_err(|e| FuVerError::InitError(e.to_string()))?;
+    fs::write(&p, toml_str).map_err(FuVerError::IO)?;
+    println!("Initialize Success!");
+    println!("file {}", p.to_string_lossy());
+    println!("version {}", &default);
+    Ok(())
+}
+
 pub fn main() -> fuver::Result<()> {
     let args = Args::parse();
     let conf_path = args.config.as_ref().unwrap();
@@ -141,7 +160,7 @@ pub fn main() -> fuver::Result<()> {
     let mut c = FuVer::from_str(&file_str)?;
 
     match args.cmd {
-        Commands::Init { config } => todo!(),
+        Commands::Init { file } => run_init(&file),
         Commands::Increment { silent, target } => run_increment(target, &mut c),
         Commands::Set { silent, target } => todo!(),
         Commands::Show { target } => {

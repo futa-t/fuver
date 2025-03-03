@@ -111,15 +111,15 @@ impl Version {
         self.patch = n;
     }
 
-    pub fn get_major(&mut self) -> usize {
+    pub fn get_major(&self) -> usize {
         self.major
     }
 
-    pub fn get_minor(&mut self) -> usize {
+    pub fn get_minor(&self) -> usize {
         self.minor
     }
 
-    pub fn get_patch(&mut self) -> usize {
+    pub fn get_patch(&self) -> usize {
         self.patch
     }
 
@@ -155,6 +155,21 @@ impl Version {
     pub fn increment_mask(&mut self, mask: &str) -> Result<()> {
         let mask_version = Version::from_str(mask)?;
         *self += mask_version;
+        Ok(())
+    }
+
+    pub fn show_major(&self) -> Result<()> {
+        println!("{}", self.get_major());
+        Ok(())
+    }
+
+    pub fn show_minor(&self) -> Result<()> {
+        println!("{}", self.get_minor());
+        Ok(())
+    }
+
+    pub fn show_patch(&self) -> Result<()> {
+        println!("{}", self.get_patch());
         Ok(())
     }
 }

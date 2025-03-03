@@ -7,9 +7,7 @@ use std::result;
 use std::str::FromStr;
 
 use crate::buildmeta;
-use crate::buildmeta::BuildMetaError;
 use crate::pre;
-use crate::pre::PreReleaseError;
 use crate::version;
 
 pub type Result<T> = result::Result<T, FuVerError>;

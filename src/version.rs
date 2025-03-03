@@ -99,16 +99,27 @@ impl Version {
         }
     }
 
-    pub fn set_major(&mut self, n: usize) {
+    pub fn set(&mut self, s: &str) -> Result<()> {
+        let new = Version::from_str(s)?;
+        self.set_major(new.get_major())?;
+        self.set_minor(new.get_minor())?;
+        self.set_patch(new.get_patch())?;
+        Ok(())
+    }
+
+    pub fn set_major(&mut self, n: usize) -> Result<()> {
         self.major = n;
+        Ok(())
     }
 
-    pub fn set_minor(&mut self, n: usize) {
+    pub fn set_minor(&mut self, n: usize) -> Result<()> {
         self.minor = n;
+        Ok(())
     }
 
-    pub fn set_patch(&mut self, n: usize) {
+    pub fn set_patch(&mut self, n: usize) -> Result<()> {
         self.patch = n;
+        Ok(())
     }
 
     pub fn get_major(&self) -> usize {
@@ -124,20 +135,20 @@ impl Version {
     }
 
     pub fn increment_major(&mut self) -> Result<()> {
-        self.set_major(self.major + 1);
+        self.set_major(self.major + 1)?;
         self.minor = 0;
         self.patch = 0;
         Ok(())
     }
 
     pub fn increment_minor(&mut self) -> Result<()> {
-        self.set_minor(self.minor + 1);
+        self.set_minor(self.minor + 1)?;
         self.patch = 0;
         Ok(())
     }
 
     pub fn increment_patch(&mut self) -> Result<()> {
-        self.set_patch(self.patch + 1);
+        self.set_patch(self.patch + 1)?;
         Ok(())
     }
 

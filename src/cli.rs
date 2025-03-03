@@ -60,11 +60,27 @@ enum IncrementCommands {
 #[derive(clap::Subcommand, Debug)]
 enum SetCommands {
     #[command(visible_alias = "ver")]
-    Version { version: String },
+    Version {
+        version: String,
+    },
+    Major {
+        version: usize,
+    },
+    Minor {
+        version: usize,
+    },
+    Patch {
+        version: usize,
+    },
     #[command(visible_alias = "pre")]
-    PreRelease { tag: String, number: Option<usize> },
+    PreRelease {
+        tag: String,
+        number: Option<usize>,
+    },
     #[command(visible_alias = "build")]
-    BuildMetaData { format: String },
+    BuildMetaData {
+        format: String,
+    },
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -207,6 +223,16 @@ fn run_show(cmd: ShowCommands, fv: &mut FuVer) -> fuver::Result<()> {
     Ok(())
 }
 
+fn run_set(cmd: SetCommands, silent: bool, fv: &mut FuVer) -> fuver::Result<()> {
+    match cmd {
+        SetCommands::Version { version } => fv.set_version(&version, silent),
+        SetCommands::Major { version } => fv.set_major(version, silent),
+        SetCommands::Minor { version } => fv.set_minor(version, silent),
+        SetCommands::Patch { version } => fv.set_patch(version, silent),
+        SetCommands::PreRelease { tag, number } => todo!(),
+        SetCommands::BuildMetaData { format } => todo!(),
+    }
+}
 pub fn main() -> fuver::Result<()> {
     let args = Args::parse();
     let conf_path = args.config.as_ref().unwrap();
@@ -216,7 +242,7 @@ pub fn main() -> fuver::Result<()> {
     match args.cmd {
         Commands::Init { file } => run_init(&file),
         Commands::Increment { silent, target } => run_increment(target, &mut fv),
-        Commands::Set { silent, target } => todo!(),
+        Commands::Set { silent, target } => run_set(target, silent, &mut fv),
         Commands::Show { target } => {
             match target {
                 Some(cmd) => run_show(cmd, &mut fv),

@@ -1,8 +1,8 @@
 [version]
 major = 0
 minor = 8
-patch = 5
-str = "0.8.5"
+patch = 8
+str = "0.8.8"
 
 [pre]
 tag = "beta"

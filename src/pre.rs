@@ -30,6 +30,7 @@ pub enum PreReleaseError {
     Format(String),
     InvalidNumber(usize),
     Overflow(usize),
+    NotDefined(String),
 }
 
 impl fmt::Display for PreReleaseError {
@@ -41,6 +42,7 @@ impl fmt::Display for PreReleaseError {
                 write!(f, "数値が指定できる範囲を超えています: {}+1", n)
             }
             PreReleaseError::Undefined => write!(f, "プレリリースが定義されていません"),
+            PreReleaseError::NotDefined(s) => write!(f, "pre-release {} is not defined.", s),
         }
     }
 }
@@ -143,8 +145,24 @@ impl PreRelease {
     }
 
     /// print pre-release info
-    pub fn show(&self) {
+    pub fn show(&self) -> Result<()> {
         println!("{}", self);
+        Ok(())
+    }
+
+    pub fn show_tag(&self) -> Result<()> {
+        println!("{}", &self.tag);
+        Ok(())
+    }
+
+    pub fn show_number(&self) -> Result<()> {
+        match self.number.as_ref() {
+            Some(n) => {
+                println!("{}", n);
+                Ok(())
+            }
+            None => Err(PreReleaseError::NotDefined("number".to_string())),
+        }
     }
 }
 

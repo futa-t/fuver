@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize)]
 #[serde(default)]
 pub struct BuildMetaData {
-    pub number: usize,
+    number: usize,
     date: String,
     hash: String,
     format: String,
@@ -57,6 +57,31 @@ impl BuildMetaData {
     /// Print from Config Format
     pub fn show(&self) -> Result<()> {
         match self.create_string() {
+            Ok(s) => {
+                println!("{}", s);
+                Ok(())
+            }
+            Err(e) => Err(BuildMetaError::Format(e.to_string())),
+        }
+    }
+
+    pub fn show_number(&self) -> Result<()> {
+        println!("{}", self.number);
+        Ok(())
+    }
+
+    pub fn show_date(&self) -> Result<()> {
+        match self.create_fmt_string("{date:%Y%m%d}") {
+            Ok(s) => {
+                println!("{}", s);
+                Ok(())
+            }
+            Err(e) => Err(BuildMetaError::Format(e.to_string())),
+        }
+    }
+
+    pub fn show_hash(&self) -> Result<()> {
+        match self.create_fmt_string("{hash:8}") {
             Ok(s) => {
                 println!("{}", s);
                 Ok(())
@@ -233,7 +258,7 @@ impl Default for BuildMetaData {
 
 impl fmt::Display for BuildMetaData {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.create_string() {
+        match self.create_fmt_string("build.{num}.date.{date:%Y%m%d}.hash.{hash:8}") {
             Ok(s) => write!(f, "{}", s),
             Err(e) => write!(f, "{}", e),
         }

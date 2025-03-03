@@ -160,25 +160,25 @@ pub struct Args {
 fn run_increment(fv: &mut FuVer, cmd: IncrementCommands, silent: bool) -> fuver::Result<()> {
     match cmd {
         IncrementCommands::Version { target } => match target {
-            IncrVersionTarget::Major => fv.incr_ver_major(),
-            IncrVersionTarget::Minor => fv.incr_ver_minor(),
-            IncrVersionTarget::Patch => fv.incr_ver_patch(),
-            IncrVersionTarget::Mask { pattern } => fv.incr_ver_mask(&pattern),
+            IncrVersionTarget::Major => fv.incr_ver_major(silent),
+            IncrVersionTarget::Minor => fv.incr_ver_minor(silent),
+            IncrVersionTarget::Patch => fv.incr_ver_patch(silent),
+            IncrVersionTarget::Mask { pattern } => fv.incr_ver_mask(&pattern, silent),
         },
-        IncrementCommands::Major => fv.incr_ver_major(),
-        IncrementCommands::Minor => fv.incr_ver_minor(),
-        IncrementCommands::Patch => fv.incr_ver_patch(),
+        IncrementCommands::Major => fv.incr_ver_major(silent),
+        IncrementCommands::Minor => fv.incr_ver_minor(silent),
+        IncrementCommands::Patch => fv.incr_ver_patch(silent),
 
-        IncrementCommands::PreRelease => fv.incr_pre(),
+        IncrementCommands::PreRelease => fv.incr_pre(silent),
 
         IncrementCommands::BuildMetaData { target } => match target {
             Some(t) => match t {
-                BuildMetaDataTarget::Number => fv.incr_build_num(),
-                BuildMetaDataTarget::Date => fv.incr_build_date(),
-                BuildMetaDataTarget::Hash => fv.incr_build_hash(),
-                BuildMetaDataTarget::All => fv.incr_build_all(),
+                BuildMetaDataTarget::Number => fv.incr_build_num(silent),
+                BuildMetaDataTarget::Date => fv.incr_build_date(silent),
+                BuildMetaDataTarget::Hash => fv.incr_build_hash(silent),
+                BuildMetaDataTarget::All => fv.incr_build_all(silent),
             },
-            None => fv.incr_build_num(),
+            None => fv.incr_build_num(silent),
         },
     }?;
     Ok(())

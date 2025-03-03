@@ -76,60 +76,109 @@ impl FuVer {
         fs::write(p, toml::to_string(&self).unwrap()).unwrap();
     }
 
-    pub fn incr_ver_major(&mut self) -> Result<()> {
-        self.version.increment_major().map_err(FuVerError::Version)
+    pub fn incr_ver_major(&mut self, silent: bool) -> Result<()> {
+        Self::set_helper(
+            &mut self.version,
+            |v| v.increment_major().map_err(FuVerError::Version),
+            "Increment Major Version",
+            silent,
+        )
+    }
+    pub fn incr_ver_minor(&mut self, silent: bool) -> Result<()> {
+        Self::set_helper(
+            &mut self.version,
+            |v| v.increment_minor().map_err(FuVerError::Version),
+            "Increment Minor Version",
+            silent,
+        )
     }
 
-    pub fn incr_ver_minor(&mut self) -> Result<()> {
-        self.version.increment_minor().map_err(FuVerError::Version)
+    pub fn incr_ver_patch(&mut self, silent: bool) -> Result<()> {
+        Self::set_helper(
+            &mut self.version,
+            |v| v.increment_patch().map_err(FuVerError::Version),
+            "Increment Patch Version",
+            silent,
+        )
     }
 
-    pub fn incr_ver_patch(&mut self) -> Result<()> {
-        self.version.increment_patch().map_err(FuVerError::Version)
+    pub fn incr_ver_mask(&mut self, mask: &str, silent: bool) -> Result<()> {
+        Self::set_helper(
+            &mut self.version,
+            |v| v.increment_mask(mask).map_err(FuVerError::Version),
+            "Increment Version",
+            silent,
+        )
     }
 
-    pub fn incr_ver_mask(&mut self, mask: &str) -> Result<()> {
-        self.version
-            .increment_mask(mask)
-            .map_err(FuVerError::Version)
+    pub fn incr_pre(&mut self, silent: bool) -> Result<()> {
+        let pre = self.pre.get_or_insert_with(pre::PreRelease::default);
+        Self::set_helper(
+            pre,
+            |p| {
+                p.increment_number()
+                    .map_err(|e| FuVerError::Error(e.to_string()))
+            },
+            "Increment Pre-Release",
+            silent,
+        )
     }
 
-    pub fn incr_pre(&mut self) -> Result<()> {
-        match self.pre.as_mut() {
-            Some(p) => p.increment_number(),
-            None => Err(PreReleaseError::Undefined),
+    pub fn incr_build_num(&mut self, silent: bool) -> Result<()> {
+        let build = self
+            .build
+            .get_or_insert_with(buildmeta::BuildMetaData::default);
+        Self::set_helper(
+            build,
+            |b| {
+                b.increment_number()
+                    .map_err(|e| FuVerError::Error(e.to_string()))
+            },
+            "Increment Build Number",
+            silent,
+        )
+    }
+    pub fn incr_build_date(&mut self, silent: bool) -> Result<()> {
+        let build = self
+            .build
+            .get_or_insert_with(buildmeta::BuildMetaData::default);
+        Self::set_helper(
+            build,
+            |b| {
+                b.update_date()
+                    .map_err(|e| FuVerError::Error(e.to_string()))
+            },
+            "Increment Build Date",
+            silent,
+        )
+    }
+    pub fn incr_build_hash(&mut self, silent: bool) -> Result<()> {
+        let build = self
+            .build
+            .get_or_insert_with(buildmeta::BuildMetaData::default);
+        Self::set_helper(
+            build,
+            |b| {
+                b.update_hash()
+                    .map_err(|e| FuVerError::Error(e.to_string()))
+            },
+            "Increment Build Hash",
+            silent,
+        )
+    }
+
+    pub fn incr_build_all(&mut self, silent: bool) -> Result<()> {
+        let current = {
+            let b = self.get_build()?;
+            b.to_string()
+        };
+        self.incr_build_num(false)?;
+        self.incr_build_date(false)?;
+        self.incr_build_hash(false)?;
+        if !silent {
+            let new = self.get_build()?;
+            println!("Increment Build {} -> {}", current, new);
         }
-        .map_err(|e| FuVerError::Error(e.to_string()))
-    }
-
-    pub fn incr_build_num(&mut self) -> Result<()> {
-        match self.build.as_mut() {
-            Some(b) => b.increment_number(),
-            None => Err(BuildMetaError::Undefined),
-        }
-        .map_err(|e| FuVerError::Error(e.to_string()))
-    }
-
-    pub fn incr_build_date(&mut self) -> Result<()> {
-        match self.build.as_mut() {
-            Some(b) => b.update_date(),
-            None => Err(BuildMetaError::Undefined),
-        }
-        .map_err(|e| FuVerError::Error(e.to_string()))
-    }
-
-    pub fn incr_build_hash(&mut self) -> Result<()> {
-        match self.build.as_mut() {
-            Some(b) => b.update_hash(),
-            None => Err(BuildMetaError::Undefined),
-        }
-        .map_err(|e| FuVerError::Error(e.to_string()))
-    }
-
-    pub fn incr_build_all(&mut self) -> Result<()> {
-        self.incr_build_num()?;
-        self.incr_build_date()?;
-        self.incr_build_hash()?;
         Ok(())
     }
 
@@ -225,7 +274,7 @@ impl FuVer {
         Ok(())
     }
 
-    fn set_helper<T, F>(target: &mut T, action: F, silent: bool) -> Result<()>
+    fn set_helper<T, F>(target: &mut T, action: F, head: &str, silent: bool) -> Result<()>
     where
         T: Display,
         F: FnOnce(&mut T) -> Result<()>,
@@ -233,7 +282,7 @@ impl FuVer {
         let current_value = target.to_string();
         action(target)?;
         if !silent {
-            println!("{} -> {}", current_value, target);
+            println!("{} {} -> {}", head, current_value, target);
         };
         Ok(())
     }
@@ -242,6 +291,7 @@ impl FuVer {
         Self::set_helper(
             &mut self.version,
             |v| v.set(s).map_err(|e| FuVerError::Error(e.to_string())),
+            "Set Vesion",
             silent,
         )
     }
@@ -250,6 +300,7 @@ impl FuVer {
         Self::set_helper(
             &mut self.version,
             |v| v.set_major(n).map_err(|e| FuVerError::Error(e.to_string())),
+            "Set Major Version",
             silent,
         )
     }
@@ -258,6 +309,7 @@ impl FuVer {
         Self::set_helper(
             &mut self.version,
             |v| v.set_minor(n).map_err(|e| FuVerError::Error(e.to_string())),
+            "Set Minor Version",
             silent,
         )
     }
@@ -266,6 +318,7 @@ impl FuVer {
         Self::set_helper(
             &mut self.version,
             |v| v.set_patch(n).map_err(|e| FuVerError::Error(e.to_string())),
+            "Set Patch Version",
             silent,
         )
     }
@@ -278,6 +331,7 @@ impl FuVer {
                 p.set(tag, number)
                     .map_err(|e| FuVerError::Error(e.to_string()))
             },
+            "Set Pre-Release",
             silent,
         )
     }
@@ -292,6 +346,7 @@ impl FuVer {
                 b.set_number(n)
                     .map_err(|e| FuVerError::Error(e.to_string()))
             },
+            "Set Build Number",
             silent,
         )
     }
@@ -305,6 +360,7 @@ impl FuVer {
                 b.set_date(date)
                     .map_err(|e| FuVerError::Error(e.to_string()))
             },
+            "Set Build Date",
             silent,
         )
     }
@@ -319,6 +375,7 @@ impl FuVer {
                 b.set_hash(hash)
                     .map_err(|e| FuVerError::Error(e.to_string()))
             },
+            "Set Build Hash",
             silent,
         )
     }
@@ -332,7 +389,7 @@ impl FuVer {
             .set_format(fmt)
             .map_err(|e| FuVerError::Error(e.to_string()))?;
         if !silent {
-            println!("{} -> {}", current, build.get_format());
+            println!("Set Build Format {} -> {}", current, build.get_format());
         }
         Ok(())
     }

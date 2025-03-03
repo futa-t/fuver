@@ -136,11 +136,14 @@ impl PreRelease {
     /// # Errors
     /// tag empty or invalid character included
     /// number is 0
-    pub fn set(&mut self, tag: &str, number: usize) -> Result<()> {
+    pub fn set(&mut self, tag: &str, number: Option<usize>) -> Result<()> {
         check_identifier(tag)?;
-        check_number_identifier(number)?;
         self.set_tag(tag)?;
-        self.set_number(number)?;
+
+        if let Some(n) = number {
+            check_number_identifier(n)?;
+            self.set_number(n)?;
+        }
         Ok(())
     }
 
@@ -286,7 +289,7 @@ mod tests {
     #[test]
     fn test_set() {
         let mut pre = PreRelease::default();
-        pre.set("rc", 2).unwrap();
+        pre.set("rc", Some(2)).unwrap();
         assert_eq!(pre.tag, "rc");
         assert_eq!(pre.number, Some(2));
         assert_eq!(pre.to_string(), "rc.2");
@@ -296,10 +299,10 @@ mod tests {
     fn test_set_invalid() {
         let mut pre = PreRelease::default();
 
-        let result = pre.set("", 1);
+        let result = pre.set("", Some(1));
         assert!(result.is_err());
 
-        let result = pre.set("beta", 0);
+        let result = pre.set("beta", Some(0));
         assert!(result.is_err());
 
         assert_eq!(pre.tag, "alpha");

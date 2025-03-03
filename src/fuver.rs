@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::fmt::Display;
 use std::fs;
 use std::io;
 use std::result;
@@ -40,13 +41,13 @@ impl fmt::Display for FuVerError {
 #[derive(Serialize, Deserialize, Default)]
 pub struct FuVer {
     #[serde(default)]
-    pub version: version::Version,
+    version: version::Version,
 
     #[serde(default)]
-    pub pre: Option<pre::PreRelease>,
+    pre: Option<pre::PreRelease>,
 
     #[serde(default)]
-    pub build: Option<buildmeta::BuildMetaData>,
+    build: Option<buildmeta::BuildMetaData>,
 }
 
 impl fmt::Display for FuVer {
@@ -172,14 +173,9 @@ impl FuVer {
     }
 
     pub fn show_prerelease_number(&self) -> Result<()> {
-        match self.pre.as_ref() {
-            Some(p) => {
-                p.show_number()
-                    .map_err(|e| FuVerError::Error(e.to_string()))?;
-                Ok(())
-            }
-            None => Err(FuVerError::Error("pre-release not defined.".to_string())),
-        }
+        self.get_prerelease()?
+            .show_number()
+            .map_err(|e| FuVerError::Error(e.to_string()))
     }
 
     fn get_build(&self) -> Result<&buildmeta::BuildMetaData> {
@@ -226,6 +222,118 @@ impl FuVer {
 
     pub fn show_full(&self) -> Result<()> {
         println!("{}", &self);
+        Ok(())
+    }
+
+    fn set_helper<T, F>(target: &mut T, action: F, silent: bool) -> Result<()>
+    where
+        T: Display,
+        F: FnOnce(&mut T) -> Result<()>,
+    {
+        let current_value = target.to_string();
+        action(target)?;
+        if !silent {
+            println!("{} -> {}", current_value, target);
+        };
+        Ok(())
+    }
+
+    pub fn set_version(&mut self, s: &str, silent: bool) -> Result<()> {
+        Self::set_helper(
+            &mut self.version,
+            |v| v.set(s).map_err(|e| FuVerError::Error(e.to_string())),
+            silent,
+        )
+    }
+
+    pub fn set_major(&mut self, n: usize, silent: bool) -> Result<()> {
+        Self::set_helper(
+            &mut self.version,
+            |v| v.set_major(n).map_err(|e| FuVerError::Error(e.to_string())),
+            silent,
+        )
+    }
+
+    pub fn set_minor(&mut self, n: usize, silent: bool) -> Result<()> {
+        Self::set_helper(
+            &mut self.version,
+            |v| v.set_minor(n).map_err(|e| FuVerError::Error(e.to_string())),
+            silent,
+        )
+    }
+
+    pub fn set_patch(&mut self, n: usize, silent: bool) -> Result<()> {
+        Self::set_helper(
+            &mut self.version,
+            |v| v.set_patch(n).map_err(|e| FuVerError::Error(e.to_string())),
+            silent,
+        )
+    }
+
+    pub fn set_pre(&mut self, tag: &str, number: Option<usize>, silent: bool) -> Result<()> {
+        let pre = self.pre.get_or_insert_with(pre::PreRelease::default);
+        Self::set_helper(
+            pre,
+            |p| {
+                p.set(tag, number)
+                    .map_err(|e| FuVerError::Error(e.to_string()))
+            },
+            silent,
+        )
+    }
+
+    pub fn set_build_number(&mut self, n: usize, silent: bool) -> Result<()> {
+        let build = self
+            .build
+            .get_or_insert_with(buildmeta::BuildMetaData::default);
+        Self::set_helper(
+            build,
+            |b| {
+                b.set_number(n)
+                    .map_err(|e| FuVerError::Error(e.to_string()))
+            },
+            silent,
+        )
+    }
+    pub fn set_build_date(&mut self, date: &str, silent: bool) -> Result<()> {
+        let build = self
+            .build
+            .get_or_insert_with(buildmeta::BuildMetaData::default);
+        Self::set_helper(
+            build,
+            |b| {
+                b.set_date(date)
+                    .map_err(|e| FuVerError::Error(e.to_string()))
+            },
+            silent,
+        )
+    }
+
+    pub fn set_build_hash(&mut self, hash: &str, silent: bool) -> Result<()> {
+        let build = self
+            .build
+            .get_or_insert_with(buildmeta::BuildMetaData::default);
+        Self::set_helper(
+            build,
+            |b| {
+                b.set_hash(hash)
+                    .map_err(|e| FuVerError::Error(e.to_string()))
+            },
+            silent,
+        )
+    }
+
+    pub fn set_build_fmt(&mut self, fmt: &str, silent: bool) -> Result<()> {
+        let build = self
+            .build
+            .get_or_insert_with(buildmeta::BuildMetaData::default);
+        let current = build.get_format();
+        build
+            .set_format(fmt)
+            .map_err(|e| FuVerError::Error(e.to_string()))?;
+        if !silent {
+            println!("{} -> {}", current, build.get_format());
+        }
         Ok(())
     }
 }

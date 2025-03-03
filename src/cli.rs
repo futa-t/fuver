@@ -39,6 +39,14 @@ enum BuildMetaDataTarget {
     All,
 }
 
+#[derive(clap::Subcommand, Debug, Clone)]
+enum SetBuildMetaDataTarget {
+    Number { value: usize },
+    Date { value: String },
+    Hash { value: String },
+    Format { value: String },
+}
+
 #[derive(clap::Subcommand, Debug)]
 enum IncrementCommands {
     #[command(visible_alias = "ver")]
@@ -60,11 +68,34 @@ enum IncrementCommands {
 #[derive(clap::Subcommand, Debug)]
 enum SetCommands {
     #[command(visible_alias = "ver")]
-    Version { version: String },
+    Version {
+        version: String,
+    },
+    Major {
+        version: usize,
+    },
+    Minor {
+        version: usize,
+    },
+    Patch {
+        version: usize,
+    },
     #[command(visible_alias = "pre")]
-    PreRelease { tag: String, number: Option<usize> },
+    PreRelease {
+        tag: String,
+        number: Option<usize>,
+    },
     #[command(visible_alias = "build")]
-    BuildMetaData { format: String },
+    BuildMetaData {
+        #[command(subcommand)]
+        target: SetBuildMetaDataTarget,
+    },
+    Date {
+        value: String,
+    },
+    Hash {
+        value: String,
+    },
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -126,7 +157,7 @@ pub struct Args {
     cmd: Commands,
 }
 
-fn run_increment(cmd: IncrementCommands, fv: &mut FuVer) -> fuver::Result<()> {
+fn run_increment(fv: &mut FuVer, cmd: IncrementCommands, silent: bool) -> fuver::Result<()> {
     match cmd {
         IncrementCommands::Version { target } => match target {
             IncrVersionTarget::Major => fv.incr_ver_major(),
@@ -168,7 +199,7 @@ fn run_init(file: &str) -> fuver::Result<()> {
     Ok(())
 }
 
-fn run_show(cmd: ShowCommands, fv: &mut FuVer) -> fuver::Result<()> {
+fn run_show(fv: &FuVer, cmd: ShowCommands) -> fuver::Result<()> {
     match cmd {
         ShowCommands::Version { target } => match target {
             Some(ShowVersionTarget::Major) => fv.show_major(),
@@ -207,6 +238,24 @@ fn run_show(cmd: ShowCommands, fv: &mut FuVer) -> fuver::Result<()> {
     Ok(())
 }
 
+fn run_set(fv: &mut FuVer, cmd: SetCommands, silent: bool) -> fuver::Result<()> {
+    match cmd {
+        SetCommands::Version { version } => fv.set_version(&version, silent),
+        SetCommands::Major { version } => fv.set_major(version, silent),
+        SetCommands::Minor { version } => fv.set_minor(version, silent),
+        SetCommands::Patch { version } => fv.set_patch(version, silent),
+        SetCommands::PreRelease { tag, number } => fv.set_pre(&tag, number, silent),
+        SetCommands::BuildMetaData { target } => match target {
+            SetBuildMetaDataTarget::Number { value } => fv.set_build_number(value, silent),
+            SetBuildMetaDataTarget::Date { value } => fv.set_build_date(&value, silent),
+            SetBuildMetaDataTarget::Hash { value } => fv.set_build_hash(&value, silent),
+            SetBuildMetaDataTarget::Format { value } => fv.set_build_fmt(&value, silent),
+        },
+        SetCommands::Date { value } => fv.set_build_date(&value, silent),
+        SetCommands::Hash { value } => fv.set_build_hash(&value, silent),
+    }
+}
+
 pub fn main() -> fuver::Result<()> {
     let args = Args::parse();
     let conf_path = args.config.as_ref().unwrap();
@@ -215,11 +264,11 @@ pub fn main() -> fuver::Result<()> {
 
     match args.cmd {
         Commands::Init { file } => run_init(&file),
-        Commands::Increment { silent, target } => run_increment(target, &mut fv),
-        Commands::Set { silent, target } => todo!(),
+        Commands::Increment { silent, target } => run_increment(&mut fv, target, silent),
+        Commands::Set { silent, target } => run_set(&mut fv, target, silent),
         Commands::Show { target } => {
             match target {
-                Some(cmd) => run_show(cmd, &mut fv),
+                Some(cmd) => run_show(&fv, cmd),
                 None => fv.show_version(),
             }?;
             Ok(())

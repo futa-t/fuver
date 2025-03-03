@@ -1,14 +1,14 @@
 [version]
 major = 0
 minor = 11
-patch = 1
-str = "0.11.1"
+patch = 3
+str = "0.11.3"
 
 [pre]
 tag = "beta"
 
 [build]
-number = 589
-date = "2025-02-25T19:24:41.685156600+09:00"
-hash = "df253922364f63bff89a09c2bacb2fab1249b12c"
+number = 600
+date = "2025-03-04T01:14:25.102948100+09:00"
+hash = "cc5048825cf821ae2a8db3eeadbaed9f548cc04a"
 format = "build.{number}.{date:%Y%m%d}"

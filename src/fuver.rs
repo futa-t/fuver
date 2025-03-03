@@ -170,9 +170,9 @@ impl FuVer {
             let b = self.get_build()?;
             b.to_string()
         };
-        self.incr_build_num(false)?;
-        self.incr_build_date(false)?;
-        self.incr_build_hash(false)?;
+        self.incr_build_num(true)?;
+        self.incr_build_date(true)?;
+        self.incr_build_hash(true)?;
         if !silent {
             let new = self.get_build()?;
             println!("Increment Build {} -> {}", current, new);

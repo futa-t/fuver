@@ -19,6 +19,8 @@ pub enum FuVerError {
     Deserialize(toml::de::Error),
     Version(version::VersionError),
     Error(String),
+    PreReleaseNotDefined,
+    BuildMetaDataNotDefined,
 }
 
 impl fmt::Display for FuVerError {
@@ -29,6 +31,8 @@ impl fmt::Display for FuVerError {
             FuVerError::Version(e) => write!(f, "Version Error: {}", e),
             FuVerError::Error(e) => write!(f, "Error: {}", e),
             FuVerError::InitError(e) => write!(f, "Initialize Error: {}", e),
+            FuVerError::PreReleaseNotDefined => write!(f, "Pre-Release is Not Defined."),
+            FuVerError::BuildMetaDataNotDefined => write!(f, "BuildMetaData is Not Defined."),
         }
     }
 }
@@ -125,6 +129,103 @@ impl FuVer {
         self.incr_build_num()?;
         self.incr_build_date()?;
         self.incr_build_hash()?;
+        Ok(())
+    }
+
+    pub fn show_version(&self) -> Result<()> {
+        println!("{}", &self.version);
+        Ok(())
+    }
+
+    pub fn show_major(&self) -> Result<()> {
+        self.version
+            .show_major()
+            .map_err(|e| FuVerError::Error(e.to_string()))
+    }
+
+    pub fn show_minor(&self) -> Result<()> {
+        self.version
+            .show_minor()
+            .map_err(|e| FuVerError::Error(e.to_string()))
+    }
+
+    pub fn show_patch(&self) -> Result<()> {
+        self.version
+            .show_patch()
+            .map_err(|e| FuVerError::Error(e.to_string()))
+    }
+
+    fn get_prerelease(&self) -> Result<&pre::PreRelease> {
+        self.pre.as_ref().ok_or(FuVerError::PreReleaseNotDefined)
+    }
+
+    pub fn show_prerelease(&self) -> Result<()> {
+        self.get_prerelease()?
+            .show()
+            .map_err(|e| FuVerError::Error(e.to_string()))
+    }
+
+    pub fn show_prerelease_tag(&self) -> Result<()> {
+        self.get_prerelease()?
+            .show_tag()
+            .map_err(|e| FuVerError::Error(e.to_string()))
+    }
+
+    pub fn show_prerelease_number(&self) -> Result<()> {
+        match self.pre.as_ref() {
+            Some(p) => {
+                p.show_number()
+                    .map_err(|e| FuVerError::Error(e.to_string()))?;
+                Ok(())
+            }
+            None => Err(FuVerError::Error("pre-release not defined.".to_string())),
+        }
+    }
+
+    fn get_build(&self) -> Result<&buildmeta::BuildMetaData> {
+        self.build
+            .as_ref()
+            .ok_or(FuVerError::BuildMetaDataNotDefined)
+    }
+
+    pub fn show_build_fmt(&self, fmt: &str) -> Result<()> {
+        self.get_build()?
+            .show_fmt(fmt)
+            .map_err(|_| FuVerError::BuildMetaDataNotDefined)
+    }
+
+    pub fn show_build(&self) -> Result<()> {
+        self.get_build()?
+            .show()
+            .map_err(|e| FuVerError::Error(e.to_string()))
+    }
+
+    pub fn show_build_number(&self) -> Result<()> {
+        self.get_build()?
+            .show_number()
+            .map_err(|e| FuVerError::Error(e.to_string()))
+    }
+
+    pub fn show_build_date(&self) -> Result<()> {
+        self.get_build()?
+            .show_date()
+            .map_err(|e| FuVerError::Error(e.to_string()))
+    }
+
+    pub fn show_build_hash(&self) -> Result<()> {
+        self.get_build()?
+            .show_hash()
+            .map_err(|e| FuVerError::Error(e.to_string()))
+    }
+
+    pub fn show_build_all(&self) -> Result<()> {
+        self.get_build()?
+            .show_all()
+            .map_err(|e| FuVerError::Error(e.to_string()))
+    }
+
+    pub fn show_full(&self) -> Result<()> {
+        println!("{}", &self);
         Ok(())
     }
 }

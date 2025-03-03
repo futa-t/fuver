@@ -142,7 +142,7 @@ pub struct Args {
     cmd: Commands,
 }
 
-fn run_increment(cmd: IncrementCommands, fv: &mut FuVer) -> fuver::Result<()> {
+fn run_increment(fv: &mut FuVer, cmd: IncrementCommands, silent: bool) -> fuver::Result<()> {
     match cmd {
         IncrementCommands::Version { target } => match target {
             IncrVersionTarget::Major => fv.incr_ver_major(),
@@ -184,7 +184,7 @@ fn run_init(file: &str) -> fuver::Result<()> {
     Ok(())
 }
 
-fn run_show(cmd: ShowCommands, fv: &mut FuVer) -> fuver::Result<()> {
+fn run_show(fv: &FuVer, cmd: ShowCommands) -> fuver::Result<()> {
     match cmd {
         ShowCommands::Version { target } => match target {
             Some(ShowVersionTarget::Major) => fv.show_major(),
@@ -223,7 +223,7 @@ fn run_show(cmd: ShowCommands, fv: &mut FuVer) -> fuver::Result<()> {
     Ok(())
 }
 
-fn run_set(cmd: SetCommands, silent: bool, fv: &mut FuVer) -> fuver::Result<()> {
+fn run_set(fv: &mut FuVer, cmd: SetCommands, silent: bool) -> fuver::Result<()> {
     match cmd {
         SetCommands::Version { version } => fv.set_version(&version, silent),
         SetCommands::Major { version } => fv.set_major(version, silent),
@@ -241,11 +241,11 @@ pub fn main() -> fuver::Result<()> {
 
     match args.cmd {
         Commands::Init { file } => run_init(&file),
-        Commands::Increment { silent, target } => run_increment(target, &mut fv),
-        Commands::Set { silent, target } => run_set(target, silent, &mut fv),
+        Commands::Increment { silent, target } => run_increment(&mut fv, target, silent),
+        Commands::Set { silent, target } => run_set(&mut fv, target, silent),
         Commands::Show { target } => {
             match target {
-                Some(cmd) => run_show(cmd, &mut fv),
+                Some(cmd) => run_show(&fv, cmd),
                 None => fv.show_version(),
             }?;
             Ok(())

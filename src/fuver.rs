@@ -269,4 +269,22 @@ impl FuVer {
             silent,
         )
     }
+
+    pub fn set_pre(&mut self, tag: &str, number: Option<usize>, silent: bool) -> Result<()> {
+        let pre = match self.pre.as_mut() {
+            Some(p) => p,
+            None => {
+                self.pre = Some(pre::PreRelease::default());
+                self.pre.as_mut().unwrap()
+            }
+        };
+        Self::set_helper(
+            pre,
+            |p| {
+                p.set(tag, number)
+                    .map_err(|e| FuVerError::Error(e.to_string()))
+            },
+            silent,
+        )
+    }
 }

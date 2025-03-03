@@ -229,7 +229,7 @@ fn run_set(cmd: SetCommands, silent: bool, fv: &mut FuVer) -> fuver::Result<()> 
         SetCommands::Major { version } => fv.set_major(version, silent),
         SetCommands::Minor { version } => fv.set_minor(version, silent),
         SetCommands::Patch { version } => fv.set_patch(version, silent),
-        SetCommands::PreRelease { tag, number } => todo!(),
+        SetCommands::PreRelease { tag, number } => fv.set_pre(&tag, number, silent),
         SetCommands::BuildMetaData { format } => todo!(),
     }
 }

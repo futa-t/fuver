@@ -39,6 +39,14 @@ enum BuildMetaDataTarget {
     All,
 }
 
+#[derive(clap::Subcommand, Debug, Clone)]
+enum SetBuildMetaDataTarget {
+    Number { value: usize },
+    Date { value: String },
+    Hash { value: String },
+    Format { value: String },
+}
+
 #[derive(clap::Subcommand, Debug)]
 enum IncrementCommands {
     #[command(visible_alias = "ver")]
@@ -79,7 +87,14 @@ enum SetCommands {
     },
     #[command(visible_alias = "build")]
     BuildMetaData {
-        format: String,
+        #[command(subcommand)]
+        target: SetBuildMetaDataTarget,
+    },
+    Date {
+        value: String,
+    },
+    Hash {
+        value: String,
     },
 }
 
@@ -230,9 +245,17 @@ fn run_set(fv: &mut FuVer, cmd: SetCommands, silent: bool) -> fuver::Result<()> 
         SetCommands::Minor { version } => fv.set_minor(version, silent),
         SetCommands::Patch { version } => fv.set_patch(version, silent),
         SetCommands::PreRelease { tag, number } => fv.set_pre(&tag, number, silent),
-        SetCommands::BuildMetaData { format } => todo!(),
+        SetCommands::BuildMetaData { target } => match target {
+            SetBuildMetaDataTarget::Number { value } => fv.set_build_number(value, silent),
+            SetBuildMetaDataTarget::Date { value } => fv.set_build_date(&value, silent),
+            SetBuildMetaDataTarget::Hash { value } => fv.set_build_hash(&value, silent),
+            SetBuildMetaDataTarget::Format { value } => fv.set_build_fmt(&value, silent),
+        },
+        SetCommands::Date { value } => fv.set_build_date(&value, silent),
+        SetCommands::Hash { value } => fv.set_build_hash(&value, silent),
     }
 }
+
 pub fn main() -> fuver::Result<()> {
     let args = Args::parse();
     let conf_path = args.config.as_ref().unwrap();

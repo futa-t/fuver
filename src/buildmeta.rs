@@ -1,7 +1,7 @@
 use std::{fmt, result};
 
 use crate::identifier;
-use chrono::{DateTime, Local};
+use chrono::{DateTime, Local, NaiveDate, TimeZone, Utc};
 use git2::Repository;
 use serde::{Deserialize, Serialize};
 
@@ -233,8 +233,45 @@ impl BuildMetaData {
         self.hash.to_string()
     }
 
+    pub fn get_format(&self) -> String {
+        self.format.to_string()
+    }
     fn hash_haed(&self, size: usize) -> String {
         self.hash.get(..size).unwrap_or(&self.hash).to_string()
+    }
+
+    pub fn set_number(&mut self, n: usize) -> Result<()> {
+        self.number = n;
+        Ok(())
+    }
+
+    /// Need format "%Y/%m/%d"
+    pub fn set_date(&mut self, s: &str) -> Result<()> {
+        let naive_date = NaiveDate::parse_from_str(s, "%Y/%m/%d")
+            .map_err(|e| BuildMetaError::Format(e.to_string()))?;
+        let naive_datetime = naive_date
+            .and_hms_opt(0, 0, 0)
+            .ok_or(BuildMetaError::Date)?;
+        let utc = Utc.from_local_datetime(&naive_datetime);
+        let rfc3339 = match utc {
+            chrono::offset::LocalResult::Single(dt) => dt.to_rfc3339(),
+            _ => return Err(BuildMetaError::Date),
+        };
+
+        self.date = rfc3339;
+        Ok(())
+    }
+
+    pub fn set_hash(&mut self, hash: &str) -> Result<()> {
+        self.hash = hash.to_string();
+        Ok(())
+    }
+
+    pub fn set_format(&mut self, fmt: &str) -> Result<()> {
+        self.create_fmt_string(fmt)
+            .map_err(|e| BuildMetaError::Format(e.to_string()))?;
+        self.format = fmt.to_string();
+        Ok(())
     }
 }
 

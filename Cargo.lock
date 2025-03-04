@@ -196,7 +196,7 @@ dependencies = [
 
 [[package]]
 name = "fuver"
-version = "0.11.4"
+version = "0.11.6"
 dependencies = [
  "chrono",
  "clap",

@@ -1,7 +1,7 @@
 use std::{
     env,
     fs::{self, File},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 use crate::fuver::{self, FuVer, FuVerError};
@@ -9,6 +9,7 @@ use clap::Parser;
 use std::str::FromStr;
 
 const DEFAULT_FILE: &str = concat!(env!("CARGO_PKG_NAME"), ".toml");
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(clap::Subcommand, Debug, Clone)]
 enum IncrVersionTarget {
@@ -146,6 +147,7 @@ enum Commands {
         #[command(subcommand)]
         target: Option<ShowCommands>,
     },
+    Version,
 }
 
 #[derive(clap::Parser, Debug)]
@@ -185,9 +187,17 @@ fn run_increment(fv: &mut FuVer, cmd: IncrementCommands, silent: bool) -> fuver:
 }
 
 fn run_init(file: &str) -> fuver::Result<()> {
-    let p = PathBuf::from(file);
+    let p = if Path::new(file).is_absolute() {
+        PathBuf::from(file)
+    } else {
+        std::env::current_dir().map_err(FuVerError::IO)?.join(file)
+    };
     if p.exists() {
         return Err(FuVerError::InitError("Already initialized.".to_string()));
+    }
+
+    if let Some(parent) = p.parent() {
+        std::fs::create_dir_all(parent).map_err(FuVerError::IO)?;
     }
     File::create(&p).map_err(FuVerError::IO)?;
     let default = FuVer::default();
@@ -259,11 +269,15 @@ fn run_set(fv: &mut FuVer, cmd: SetCommands, silent: bool) -> fuver::Result<()> 
 pub fn main() -> fuver::Result<()> {
     let args = Args::parse();
     let conf_path = args.config.as_ref().unwrap();
+
+    if let Commands::Init { file } = args.cmd {
+        return run_init(&file);
+    };
+
     let file_str = fs::read_to_string(conf_path).map_err(FuVerError::IO)?;
     let mut fv = FuVer::from_str(&file_str)?;
 
     match args.cmd {
-        Commands::Init { file } => run_init(&file),
         Commands::Increment { silent, target } => run_increment(&mut fv, target, silent),
         Commands::Set { silent, target } => run_set(&mut fv, target, silent),
         Commands::Show { target } => {
@@ -273,6 +287,11 @@ pub fn main() -> fuver::Result<()> {
             }?;
             Ok(())
         }
+        Commands::Version => {
+            println!("fuver version {}", VERSION);
+            Ok(())
+        }
+        _ => Ok(()),
     }?;
     fv.save(conf_path);
     Ok(())
